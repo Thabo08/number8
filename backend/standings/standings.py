@@ -2,6 +2,7 @@ from flask import Flask
 from markupsafe import escape
 import json
 import requests
+from domain.leagues import Leagues
 
 app = Flask(__name__)
 
@@ -24,7 +25,8 @@ def get_league_standings(league, season):
 
     url = "https://{}/{}/{}".format(API_HOST, API_VERSION, BASE_PATH)
 
-    league = escape(league)
+    league_obj = Leagues()
+    league = escape(league_obj.get_league(league))
     season = escape(season)
 
     querystring = {"season": season, "league": league}
