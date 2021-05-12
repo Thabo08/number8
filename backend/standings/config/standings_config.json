@@ -1,0 +1,65 @@
+{
+  "leagues": {
+    "England": {
+      "epl": {
+        "id": 39,
+        "name": "Premier League",
+        "type": "league"
+      },
+      "championship": {
+        "id": 40,
+        "name": "Championship",
+        "type": "league"
+      }
+    },
+    "Spain": {
+      "laliga": {
+        "id": 140,
+        "name": "Primera Division",
+        "type": "league"
+      },
+      "laliga2": {
+        "id": 141,
+        "name": "Segunda Division",
+        "type": "league"
+      }
+    },
+    "Italy": {
+      "seriea": {
+        "id": 135,
+        "name": "Serie A",
+        "type": "league"
+      },
+      "serieb": {
+        "id": 136,
+        "name": "Serie B",
+        "type": "league"
+      }
+    },
+    "France": {
+      "ligue1": {
+        "id": 61,
+        "name": "Ligue 1",
+        "type": "league"
+      },
+      "ligue2": {
+        "id": 62,
+        "name": "Ligue 2",
+        "type": "league"
+      }
+    },
+    "Germany": {
+      "bundesliga1" : {
+        "id": 78,
+        "name": "Bundesliga 1",
+        "type": "league"
+      },
+      "bundesliga2": {
+        "id": 79,
+        "name": "Bundesliga 2",
+        "type": "league"
+      }
+    }
+  }
+}
+

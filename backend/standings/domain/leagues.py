@@ -1,3 +1,6 @@
+import json
+from config import ConfigProvider
+
 
 class League:
     """ This type holds the details of a league """
@@ -53,3 +56,33 @@ class Leagues:
 
     def get_league(self, league_alias):
         return self.leagues[league_alias].league_id
+
+
+def _config(filename='../config/standings_config.json'):
+    with open(filename) as config_file:
+        config = json.load(config_file)
+    return config
+
+
+def _load_leagues_from_config(config_provider: ConfigProvider, config_type):
+    leagues = config_provider.get_config_per_type(config_type)
+    countries = leagues.keys()
+    for country in countries:
+        aliases = country.keys()
+        for alias in aliases:
+            id = alias["id"]
+            name = alias["name"]
+            type_ = alias["type"]
+            print(id, name, type_)
+
+
+class Leagues2:
+    def __init__(self, config_provider: ConfigProvider):
+        self.leagues = _load_leagues_from_config(config_provider, "leagues")
+
+
+if __name__ == '__main__':
+    # c = _config()
+    # print(c["leagues"])
+    config_provider = ConfigProvider('../config/standings_config.json')
+    _load_leagues_from_config(config_provider, "leagues")
