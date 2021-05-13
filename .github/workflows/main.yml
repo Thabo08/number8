@@ -39,4 +39,4 @@ jobs:
           pip install -r backend/requirements.txt
 
       - name: Run tests with pytest
-        run: python -m pytest
+        run: python -m pytest -v
