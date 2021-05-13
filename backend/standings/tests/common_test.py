@@ -8,5 +8,8 @@ class CommonTestCases(TestCase):
         self.assertRaises(FileNotFoundError, _config, "somefile.txt")
 
     def test_returns_valid_type_when_file_exists(self):
-        conf = _config('test_files/test_config.json')
+        import os
+        test_dir = os.path.dirname(os.path.abspath(__file__))
+        test_config = os.path.abspath(os.path.join(test_dir, 'test_files/test_config.json'))
+        conf = _config(test_config)
         self.assertTrue(conf is not None, "Must return config")

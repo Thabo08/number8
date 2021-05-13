@@ -1,6 +1,9 @@
+import sys
+
 from flask import Flask
 from markupsafe import escape
 import requests
+import subprocess
 
 from backend.standings.common import _config
 from domain.leagues import Leagues, ConfigProvider
@@ -36,4 +39,6 @@ def get_league_standings(league, season):
 
 
 if __name__ == '__main__':
+    if '--unittest' in sys.argv:
+        subprocess.call([sys.executable, '-m', 'unittest', 'discover'])
     app.run(debug=True)
