@@ -1,1 +1,11 @@
-{}
+{
+    "leagues": {
+      "England": {
+        "epl": {
+          "id": 39,
+          "name": "Premier League",
+          "type": "league"
+        }
+      }
+    }
+}
