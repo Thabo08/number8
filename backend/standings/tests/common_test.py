@@ -12,4 +12,4 @@ class CommonTestCases(TestCase):
         test_dir = os.path.dirname(os.path.abspath(__file__))
         test_config = os.path.abspath(os.path.join(test_dir, 'test_files/test_config.json'))
         conf = _config(test_config)
-        self.assertFalse(conf is not None, "Must return config")
+        self.assertTrue(conf is not None, "Must return config")
