@@ -4,7 +4,7 @@ from os import path
 import json
 
 
-def _config(config_file):
+def config(config_file):
     if not path.exists(config_file):
         raise FileNotFoundError("{} does not exist".format(config_file))
     with open(config_file) as config_file:

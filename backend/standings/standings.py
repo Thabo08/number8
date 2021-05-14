@@ -5,12 +5,12 @@ from markupsafe import escape
 import requests
 import subprocess
 
-from backend.standings.common import _config
+from backend.standings.common import config
 from domain.leagues import Leagues, ConfigProvider
 
 app = Flask(__name__)
 
-CONFIG = _config('../config.json')
+CONFIG = config('../config.json')
 API_HOST = CONFIG['rapidapi_host']
 API_VERSION = CONFIG['rapidapi_version']
 API_KEY = CONFIG['rapidapi_key']
@@ -22,7 +22,7 @@ leagues = Leagues(ConfigProvider('config/standings_config.json'))
 def get_league_standings(league, season):
     url = "https://{}/{}/{}".format(API_HOST, API_VERSION, BASE_PATH)
 
-    league = leagues.get_league(league)
+    league = leagues.get_league(league)  # TODO: Handle the LeagueNotFoundError thrown by this method
     print("Retrieving standings for league: {}".format(league))
     league = escape(league.get_league_id())
     season = escape(season)

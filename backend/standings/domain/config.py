@@ -1,12 +1,12 @@
 
 """This module is responsible for supplying config to the caller """
-from backend.standings.common import _config
+from backend.standings.common import config
 
 
 class ConfigProvider:
     """This class loads the config and makes it available to the callers"""
     def __init__(self, config_file: str):
-        self.config = _config(config_file)
+        self.config = config(config_file)
 
     def get_config_per_type(self, config_type: str):
         """This method gets config per type from the loaded config
