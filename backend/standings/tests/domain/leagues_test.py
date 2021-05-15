@@ -23,7 +23,7 @@ class LeaguesTestCases(TestCase):
     def __init__(self, *args, **kwargs):
         super(LeaguesTestCases, self).__init__(*args, **kwargs)
         test_dir = os.path.dirname(os.path.abspath(__file__))
-        test_config = os.path.abspath(os.path.join(test_dir, 'test_files/test_config.json'))
+        test_config = os.path.abspath(os.path.join(test_dir, '../test_files/test_config.json'))
         config_provider = ConfigProvider(test_config)
         self.leagues = Leagues(config_provider)
 

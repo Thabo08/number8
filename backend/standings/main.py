@@ -35,6 +35,7 @@ def get_league_standings(league, season):
     }
 
     response = requests.request("GET", url, headers=headers, params=querystring)
+
     return response.text
 
 
