@@ -1,8 +1,10 @@
 from unittest import TestCase
+from unittest import mock
 
 from backend.standings.domain.response.standings import Record
 from backend.standings.domain.response.standings import Records
 from backend.standings.domain.response.standings import Standing
+from backend.standings.domain.response.standings import Standings
 from backend.standings.domain.response.standings import Team
 from backend.standings.domain.response.standings import RecordTypeError
 
@@ -85,3 +87,17 @@ class StandingTests(TestCase):
         self.assertEqual(31, standing.get_goals_against())
         self.assertEqual(51, standing.get_goal_diff())
 
+
+class StandingsTests(TestCase):
+    def __init__(self, *args, **kwargs):
+        super(StandingsTests, self).__init__(*args, **kwargs)
+
+    def test_should_return_nothing_if_standing_not_added(self):
+        standings = Standings()
+        self.assertTrue(standings.is_empty())
+
+    @mock.patch('backend.standings.domain.response.standings.Standings')
+    def test_should_return_standings_if_standings_added(self, mock_standing):
+        standings = Standings()
+        standings.add(mock_standing)
+        self.assertFalse(standings.is_empty())

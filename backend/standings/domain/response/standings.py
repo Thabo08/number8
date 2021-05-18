@@ -146,3 +146,21 @@ class Standing:
 
     def get_form(self):
         return self.form
+
+
+class Standings:
+    """ This is a collection of all standings for a league at a given time"""
+    def __init__(self):
+        self.standings = {}
+
+    def add(self, standing: Standing):
+        assert standing is not None
+        rank = standing.get_rank()
+        self.standings[rank] = standing
+
+    def get_all(self):
+        return self.standings
+
+    def is_empty(self):
+        return len(self.standings) == 0
+
