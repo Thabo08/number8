@@ -1,9 +1,11 @@
 """ This module holds the information about league standings """
 
-#{'rank': 1, 'team': {'id': 505, 'name': 'Inter', 'logo': 'https://media.api-sports.io/football/teams/505.png'}, 'points': 88, 'goalsDiff': 51, 'group': 'Serie A', 'form': 'WWWWD', 'status': 'same', 'description': 'Promotion - Champions League (Group Stage)', 'all': {'played': 36, 'win': 27, 'draw': 7, 'lose': 2, 'goals': {'for': 82, 'against': 31}}, 'home': {'played': 18, 'win': 16, 'draw': 1, 'lose': 1, 'goals': {'for': 48, 'against': 17}}, 'away': {'played': 18, 'win': 11, 'draw': 6, 'lose': 1, 'goals': {'for': 34, 'against': 14}}, 'update': '2021-05-15T00:00:00+00:00'}
+
+# {'rank': 1, 'team': {'id': 505, 'name': 'Inter', 'logo': 'https://media.api-sports.io/football/teams/505.png'}, 'points': 88, 'goalsDiff': 51, 'group': 'Serie A', 'form': 'WWWWD', 'status': 'same', 'description': 'Promotion - Champions League (Group Stage)', 'all': {'played': 36, 'win': 27, 'draw': 7, 'lose': 2, 'goals': {'for': 82, 'against': 31}}, 'home': {'played': 18, 'win': 16, 'draw': 1, 'lose': 1, 'goals': {'for': 48, 'against': 17}}, 'away': {'played': 18, 'win': 11, 'draw': 6, 'lose': 1, 'goals': {'for': 34, 'against': 14}}, 'update': '2021-05-15T00:00:00+00:00'}
 # standings = response.json()['response'][0]['league']['standings'][0]
 # for s in standings:
 #     print(s)
+
 
 class Team:
     """ All the information about a team """
@@ -33,7 +35,9 @@ class Team:
 # 'all': {'played': 36, 'win': 27, 'draw': 7, 'lose': 2, 'goals': {'for': 82, 'against': 31}}
 class Record:
     """ Information about team's record in games """
-    def __init__(self, played: int, wins: int, draws: int, loses: int, goals_for: int, goals_against: int):
+
+    def __init__(self, type_: str, played: int, wins: int, draws: int, loses: int, goals_for: int, goals_against: int):
+        self.type_ = type_
         self.played = played
         self.wins = wins
         self.draws = draws
@@ -41,6 +45,9 @@ class Record:
         self.goals_for = goals_for
         self.goals_against = goals_against
         self.goal_diff = self.goals_for - self.goals_against
+
+    def get_type(self):
+        return self.type_
 
     def get_played(self):
         return self.played
@@ -71,20 +78,21 @@ class Records:
         self.is_supported = lambda type_: type_ in supported_types
         self.records = {}
 
-    def add_record(self, type_: str, record: Record):
+    def add_record(self, record: Record):
+        type_ = record.get_type()
         self.validate_type_support(type_)
         self.records[type_] = record
 
-    def get(self, type_="all"):
+    def get_record(self, type_="all"):
         self.validate_type_support(type_)
         record = self.records.get(type_)
         if record is None:
-            raise RecordTypeError("{} record wanted but never added".format(type_))
+            raise RecordTypeError("'{}' record wanted but never added".format(type_))
         return record
 
     def validate_type_support(self, type_):
         if not self.is_supported(type_):
-            raise RecordTypeError("{} record is not supported".format(type_))
+            raise RecordTypeError("'{}' record is not supported".format(type_))
 
 
 class RecordTypeError(KeyError):
@@ -94,9 +102,47 @@ class RecordTypeError(KeyError):
 
 class Standing:
     """ All information about a standing """
-    def __init__(self, rank: int, team: Team, points: int, group: str, form: str):
+
+    def __init__(self, rank: int, team: Team, points: int, group: str, form: str, records: Records):
         self.rank = rank
         self.team = team
         self.points = points
         self.group = group
         self.form = form
+        self.record = records.get_record()
+
+    def get_played(self):
+        return self.record.get_played()
+
+    def get_wins(self):
+        return self.record.get_wins()
+
+    def get_draws(self):
+        return self.record.get_draws()
+
+    def get_loses(self):
+        return self.record.get_loses()
+
+    def get_goals_for(self):
+        return self.record.get_goals_for()
+
+    def get_goals_against(self):
+        return self.record.get_goals_against()
+
+    def get_goal_diff(self):
+        return self.record.get_goal_diff()
+
+    def get_rank(self):
+        return self.rank
+
+    def get_team(self):
+        return self.team
+
+    def get_points(self):
+        return self.points
+
+    def get_group(self):
+        return self.group
+
+    def get_form(self):
+        return self.form
