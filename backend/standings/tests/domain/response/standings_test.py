@@ -1,7 +1,9 @@
 from unittest import TestCase
 
 from backend.standings.domain.response.standings import Record
+from backend.standings.domain.response.standings import Records
 from backend.standings.domain.response.standings import Team
+from backend.standings.domain.response.standings import RecordTypeError
 
 
 class TeamTests(TestCase):
@@ -33,3 +35,26 @@ class RecordTests(TestCase):
         self.assertEqual(20, self.record.get_goals_for())
         self.assertEqual(10, self.record.get_goals_against())
         self.assertEqual(10, self.record.get_goal_diff())
+
+
+class RecordsTests(TestCase):
+    def __init__(self, *args, **kwargs):
+        super(RecordsTests, self).__init__(*args, **kwargs)
+        self.records = Records()
+
+    def test_should_return_record_if_added(self):
+        record = Record(20, 10, 5, 5, 20, 10)
+
+        self.records.add_record("away", record)
+
+        self.assertEqual(record, self.records.get("away"))
+
+    def test_should_raise_error_if_unsupported_type_provided(self):
+        self.assertRaises(RecordTypeError, self.records.add_record, "rubbish", None)
+
+    def test_should_raise_error_if_unsupported_record_type_accessed(self):
+        self.assertRaises(RecordTypeError, self.records.get, "rubbish")
+
+    def test_should_raise_error_if_type_not_added(self):
+        self.assertRaises(RecordTypeError, self.records.get, "home")
+

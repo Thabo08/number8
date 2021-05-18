@@ -65,16 +65,31 @@ class Record:
 
 
 class Records:
-    def __init__(self):
+    def __init__(self, supported_types=None):
+        if supported_types is None:
+            supported_types = ["all", "home", "away"]
+        self.is_supported = lambda type_: type_ in supported_types
         self.records = {}
 
     def add_record(self, type_: str, record: Record):
+        self.validate_type_support(type_)
         self.records[type_] = record
 
-    def get(self, type_=None):
-        if type_ is None:
-            return self.records
-        return self.records.get(type_)
+    def get(self, type_="all"):
+        self.validate_type_support(type_)
+        record = self.records.get(type_)
+        if record is None:
+            raise RecordTypeError("{} record wanted but never added".format(type_))
+        return record
+
+    def validate_type_support(self, type_):
+        if not self.is_supported(type_):
+            raise RecordTypeError("{} record is not supported".format(type_))
+
+
+class RecordTypeError(KeyError):
+    def __init__(self, message):
+        super(RecordTypeError, self).__init__(message)
 
 
 class Standing:
