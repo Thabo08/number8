@@ -161,6 +161,9 @@ class Standing:
     def get_form(self):
         return self.form
 
+    def __str__(self):
+        return json.dumps(self, default=lambda o: o.__dict__)
+
 
 class Standings:
     """ This is a collection of all standings for a league at a given time"""
@@ -223,15 +226,3 @@ def _goals_builder(goals_response):
     goals_against = goals_response['against']
 
     return Goals(goals_for=goals_for, goals_against=goals_against)
-
-
-if __name__ == '__main__':
-    team = Team(2, 'Inter', 'https://media.api-sports.io/football/teams/505.png', 'https://www.inter.it/en')
-    record = Record("all", 36, 27, 7, 2, 82, 31)
-    records = Records()
-    records.add_record(record)
-    standing = Standing(rank=1, team=team, points=88, group="Serie A", form="WWWWD", records=records)
-
-    standings = Standings()
-    standings.add(standing)
-    print(standings.as_json())

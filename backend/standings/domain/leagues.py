@@ -1,6 +1,7 @@
 """This module is responsible for supplying config to the caller """
 
 from backend.standings.domain.config import ConfigProvider
+from backend.standings.loggers import logger_factory
 
 ID = "id"
 NAME = "name"
@@ -27,7 +28,8 @@ class Leagues:
         retrieved by passing the league alias to the :func:`League.get_league` method.
     """
     def __init__(self, config_provider: ConfigProvider):
-        self.leagues = _load_leagues_from_config(config_provider)
+        self.logger = logger_factory(Leagues.__name__)
+        self.leagues = _load_leagues_from_config(config_provider, self.logger)
 
     def get_league(self, alias):
         """ Get :func:`League` object associated with an alias
@@ -43,7 +45,7 @@ class Leagues:
         return league
 
 
-def _load_leagues_from_config(config_provider: ConfigProvider, config_type="leagues"):
+def _load_leagues_from_config(config_provider: ConfigProvider, logger, config_type="leagues"):
     leagues = config_provider.get_config_per_type(config_type)
     countries = leagues.keys()
     loaded_leagues = {}
@@ -57,7 +59,7 @@ def _load_leagues_from_config(config_provider: ConfigProvider, config_type="leag
             type_ = league[TYPE]
             league_object = League(country, name, id_, type_)
             loaded_leagues[alias] = league_object
-            print("Loaded league: {}".format(league_object))
+            logger.debug("Loaded league: %s", league_object)
     return loaded_leagues
 
 
