@@ -6,6 +6,8 @@ import requests
 import subprocess
 
 from backend.standings.common import config
+from backend.standings.domain.response.standings import Standings
+from backend.standings.domain.response.standings import standing_builder
 from domain.leagues import Leagues, ConfigProvider
 
 app = Flask(__name__)
@@ -35,8 +37,11 @@ def get_league_standings(league, season):
     }
 
     response = requests.request("GET", url, headers=headers, params=querystring)
-
-    return response.text
+    standings = Standings()
+    standings_response = response.json()['response'][0]['league']['standings'][0]
+    for standing_response in standings_response:
+        standings.add(standing_builder(standing_response))
+    return standings.as_json()
 
 
 if __name__ == '__main__':

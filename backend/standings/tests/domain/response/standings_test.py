@@ -1,5 +1,6 @@
 from unittest import TestCase
 from unittest import mock
+import json
 
 from backend.standings.domain.response.standings import Record
 from backend.standings.domain.response.standings import Records
@@ -7,6 +8,7 @@ from backend.standings.domain.response.standings import Standing
 from backend.standings.domain.response.standings import Standings
 from backend.standings.domain.response.standings import Team
 from backend.standings.domain.response.standings import RecordTypeError
+from backend.standings.domain.response.standings import standing_builder
 
 
 class TeamTests(TestCase):
@@ -101,3 +103,15 @@ class StandingsTests(TestCase):
         standings = Standings()
         standings.add(mock_standing)
         self.assertFalse(standings.is_empty())
+
+    def test_standing_build_properly(self):
+        sample_standing_response = '{"rank": 1, "team": {"id": 505, "name": "Inter", "logo": ' \
+                                   '"https://media.api-sports.io/football/teams/505.png"}, "points": 88, "goalsDiff": ' \
+                                   '51, "group": "Serie A", "form": "WWWWD", "status": "same", "description": ' \
+                                   '"Promotion - Champions League (Group Stage)", "all": {"played": 36, "win": 27, ' \
+                                   '"draw": 7, "lose": 2, "goals": {"for": 82, "against": 31}}, "home": {"played": ' \
+                                   '18, "win": 16, "draw": 1, "lose": 1, "goals": {"for": 48, "against": 17}}, ' \
+                                   '"away": {"played": 18, "win": 11, "draw": 6, "lose": 1, "goals": {"for": 34, ' \
+                                   '"against": 14}}, "update": "2021-05-15T00:00:00+00:00"} '
+        standing = standing_builder(json.loads(sample_standing_response))
+        self.assertIsNotNone(standing)

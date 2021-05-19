@@ -1,10 +1,13 @@
 """ This module holds the information about league standings """
 
+# {'rank': 1, 'team': {'id': 505, 'name': 'Inter', 'logo': 'https://media.api-sports.io/football/teams/505.png'},
+# 'points': 88, 'goalsDiff': 51, 'group': 'Serie A', 'form': 'WWWWD', 'status': 'same', 'description': 'Promotion -
+# Champions League (Group Stage)', 'all': {'played': 36, 'win': 27, 'draw': 7, 'lose': 2, 'goals': {'for': 82,
+# 'against': 31}}, 'home': {'played': 18, 'win': 16, 'draw': 1, 'lose': 1, 'goals': {'for': 48, 'against': 17}},
+# 'away': {'played': 18, 'win': 11, 'draw': 6, 'lose': 1, 'goals': {'for': 34, 'against': 14}}, 'update':
+# '2021-05-15T00:00:00+00:00'}
 
-# {'rank': 1, 'team': {'id': 505, 'name': 'Inter', 'logo': 'https://media.api-sports.io/football/teams/505.png'}, 'points': 88, 'goalsDiff': 51, 'group': 'Serie A', 'form': 'WWWWD', 'status': 'same', 'description': 'Promotion - Champions League (Group Stage)', 'all': {'played': 36, 'win': 27, 'draw': 7, 'lose': 2, 'goals': {'for': 82, 'against': 31}}, 'home': {'played': 18, 'win': 16, 'draw': 1, 'lose': 1, 'goals': {'for': 48, 'against': 17}}, 'away': {'played': 18, 'win': 11, 'draw': 6, 'lose': 1, 'goals': {'for': 34, 'against': 14}}, 'update': '2021-05-15T00:00:00+00:00'}
-# standings = response.json()['response'][0]['league']['standings'][0]
-# for s in standings:
-#     print(s)
+import json
 
 
 class Team:
@@ -32,7 +35,18 @@ class Team:
         return self.name
 
 
-# 'all': {'played': 36, 'win': 27, 'draw': 7, 'lose': 2, 'goals': {'for': 82, 'against': 31}}
+class Goals:
+    def __init__(self, goals_for, goals_against):
+        self.goals_for = goals_for
+        self.goals_against = goals_against
+
+    def get_goals_for(self):
+        return self.goals_for
+
+    def get_goals_against(self):
+        return self.goals_against
+
+
 class Record:
     """ Information about team's record in games """
 
@@ -150,6 +164,7 @@ class Standing:
 
 class Standings:
     """ This is a collection of all standings for a league at a given time"""
+
     def __init__(self):
         self.standings = {}
 
@@ -164,3 +179,59 @@ class Standings:
     def is_empty(self):
         return len(self.standings) == 0
 
+    def as_json(self):
+        return json.dumps(self, default=lambda o: o.__dict__, indent=4)
+
+
+def standing_builder(standing_response):
+    """ Builds a standing from json text
+
+        :param standing_response: Standing response in json format
+        :return Standing
+     """
+    rank = standing_response['rank']
+    team = _team_builder(standing_response['team'])
+    points = standing_response['points']
+    group = standing_response['group']
+    form = standing_response['form']
+    record = _record_builder(standing_response['all'])
+    records = Records()
+    records.add_record(record)
+
+    return Standing(rank=rank, team=team, points=points, group=group, form=form, records=records)
+
+
+def _team_builder(team_response):
+    return Team(id_=team_response['id'], name=team_response['name'], logo=team_response['logo'])
+
+
+def _record_builder(record_response):
+    played = record_response['played']
+    wins = record_response['win']
+    draws = record_response['draw']
+    loses = record_response['lose']
+    goals = _goals_builder(record_response['goals'])
+    goals_for = goals.get_goals_for()
+    goals_against = goals.get_goals_against()
+
+    return Record(type_="all", played=played, wins=wins, draws=draws, loses=loses,
+                  goals_for=goals_for, goals_against=goals_against)
+
+
+def _goals_builder(goals_response):
+    goals_for = goals_response['for']
+    goals_against = goals_response['against']
+
+    return Goals(goals_for=goals_for, goals_against=goals_against)
+
+
+if __name__ == '__main__':
+    team = Team(2, 'Inter', 'https://media.api-sports.io/football/teams/505.png', 'https://www.inter.it/en')
+    record = Record("all", 36, 27, 7, 2, 82, 31)
+    records = Records()
+    records.add_record(record)
+    standing = Standing(rank=1, team=team, points=88, group="Serie A", form="WWWWD", records=records)
+
+    standings = Standings()
+    standings.add(standing)
+    print(standings.as_json())
