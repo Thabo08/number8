@@ -6,15 +6,17 @@ import requests
 import subprocess
 
 from backend.standings.common import config
+from backend.standings.common import configure_logger
+from backend.standings.common import logger_factory
 from backend.standings.domain.response.standings import Standings
 from backend.standings.domain.response.standings import standing_builder
-from backend.standings.loggers import logger_factory
 from domain.leagues import Leagues, ConfigProvider
 
 app = Flask(__name__)
 
-leagues = Leagues(ConfigProvider('config/standings_config.json'))
+configure_logger("../log_config.yaml")
 logger = logger_factory(__name__)
+leagues = Leagues(ConfigProvider('config/standings_config.json'))
 
 
 @app.route('/standings/<league>/<season>', methods=['GET'])

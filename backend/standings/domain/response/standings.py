@@ -9,6 +9,8 @@
 
 import json
 
+from backend.standings.common import logger_factory
+
 
 class Team:
     """ All the information about a team """
@@ -91,6 +93,7 @@ class Records:
             supported_types = ["all", "home", "away"]
         self.is_supported = lambda type_: type_ in supported_types
         self.records = {}
+        self.logger = logger_factory(Records.__name__)
 
     def add_record(self, record: Record):
         type_ = record.get_type()
@@ -101,11 +104,13 @@ class Records:
         self.validate_type_support(type_)
         record = self.records.get(type_)
         if record is None:
+            self.logger.error("'%s' record wanted but never added", type_)
             raise RecordTypeError("'{}' record wanted but never added".format(type_))
         return record
 
     def validate_type_support(self, type_):
         if not self.is_supported(type_):
+            self.logger.error("'%s' record is not supported", type_)
             raise RecordTypeError("'{}' record is not supported".format(type_))
 
 

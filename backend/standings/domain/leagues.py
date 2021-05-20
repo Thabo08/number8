@@ -1,7 +1,6 @@
 """This module is responsible for supplying config to the caller """
-
+from backend.standings.common import logger_factory
 from backend.standings.domain.config import ConfigProvider
-from backend.standings.loggers import logger_factory
 
 ID = "id"
 NAME = "name"
@@ -41,6 +40,7 @@ class Leagues:
         assert alias is not None, "Alias cannot be None"
         league = self.leagues.get(alias)
         if league is None:
+            self.logger.error("No league with alias: %s", alias)
             raise LeagueNotFoundError("No league with alias: {}".format(alias))
         return league
 

@@ -8,13 +8,13 @@ handlers:
     level: DEBUG
     formatter: simple
     stream: ext://sys.stdout
-  file:
-    class: logging.FileHandler
-    level: INFO
-    formatter: simple
-    filename: standings.log
-    encoding: utf8
-    mode: w
+#  file:
+#    class: logging.FileHandler
+#    level: INFO
+#    formatter: simple
+#    filename: standings/standings.log
+#    encoding: utf8
+#    mode: w
 
 root:
   level: DEBUG
