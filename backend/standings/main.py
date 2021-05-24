@@ -24,7 +24,7 @@ def get_league_standings(league, season):
     url = "https://{}/{}/{}".format(API_HOST, API_VERSION, BASE_PATH)
 
     league = leagues.get_league(league)  # TODO: Handle the LeagueNotFoundError thrown by this method
-    logger.info("Retrieving standings for '%s' league from %s", league, url)
+    logger.info("Retrieving '%s' season standings for '%s' league from '%s'", season, league, url)
     league = escape(league.get_league_id())
     season = escape(season)
 
