@@ -1,4 +1,6 @@
 """This module is responsible for supplying config to the caller """
+import logging
+
 from backend.standings.common import logger_factory
 from backend.standings.domain.config import ConfigProvider
 
@@ -49,6 +51,7 @@ def _load_leagues_from_config(config_provider: ConfigProvider, logger, config_ty
     leagues = config_provider.get_config_per_type(config_type)
     countries = leagues.keys()
     loaded_leagues = {}
+    logger.setLevel(logging.DEBUG)
     for country in countries:
         country_leagues = dict(leagues[country])
         aliases = country_leagues.keys()
