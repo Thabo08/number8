@@ -10,7 +10,9 @@ from markupsafe import escape
 import requests
 
 from backend.standings.domain.response.standings import standing_builder
+from backend.standings.domain.storage.storage import Database
 from backend.standings.domain.storage.storage import Storage
+from backend.standings.domain.storage.storage import database_provider
 
 leagues = Leagues(ConfigProvider('config/standings_config.json'))
 logger = logger_factory(__name__)
@@ -21,7 +23,7 @@ API_VERSION = CONFIG['rapidapi_version']
 API_KEY = CONFIG['rapidapi_key']
 BASE_PATH = "standings"
 
-storage = Storage('in_memory')
+storage = Storage(database_provider(Database.is_in_memory("in_memory")))
 
 
 class LazyView(object):
@@ -44,26 +46,26 @@ def storage_key(league, season):
 
 def get_league_standings(league, season):
 
-    league = leagues.get_league(league)  # TODO: Handle the LeagueNotFoundError thrown by this method
+    alias = league
+    league = leagues.get_league(alias)  # TODO: Handle the LeagueNotFoundError thrown by this method
     league = escape(league.get_league_id())
     season = escape(season)
 
-    key = storage_key(league, season)
+    key = storage_key(alias, season)
     if storage.contains_standings(key):
-        logger.info("Retrieving '%s' season standings for '%s' league from database", season, league)
-        standings = storage.get(key)
-        return standings.as_json()
+        return get_from_storage(alias, key, season)
 
+    return get_from_server(alias, key, league, season)
+
+
+def get_from_server(alias, key, league, season):
     url = "https://{}/{}/{}".format(API_HOST, API_VERSION, BASE_PATH)
-    logger.info("Retrieving '%s' season standings for '%s' league from '%s'", season, league, url)
-
+    logger.info("Retrieving '%s' season standings for '%s' league from '%s'", season, alias, url)
     querystring = {"season": season, "league": league}
-
     headers = {
         'x-rapidapi-key': API_KEY,
         'x-rapidapi-host': API_HOST
     }
-
     response = requests.request("GET", url, headers=headers, params=querystring)
     standings = Standings()
     standings_response = response.json()['response'][0]['league']['standings'][0]
@@ -72,4 +74,10 @@ def get_league_standings(league, season):
         standings.add(standing)
         logger.debug("Added standing: %s", standing)
     storage.store(key, standings)
+    return standings.as_json()
+
+
+def get_from_storage(alias, key, season):
+    logger.info("Retrieving '%s' season standings for '%s' league from database", season, alias)
+    standings = storage.get(key)
     return standings.as_json()

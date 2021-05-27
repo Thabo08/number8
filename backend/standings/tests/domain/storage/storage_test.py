@@ -1,14 +1,16 @@
 from unittest import TestCase
 from unittest import mock
 
+from backend.standings.domain.storage.storage import Database
 from backend.standings.domain.storage.storage import Storage
+from backend.standings.domain.storage.storage import database_provider
 
 
 class StorageTestCases(TestCase):
 
     def __init__(self, *args, **kwargs):
         super(StorageTestCases, self).__init__(*args, **kwargs)
-        self.storage = Storage('in_memory')
+        self.storage = Storage(database_provider(Database.is_in_memory("in_memory")))
 
     @mock.patch('backend.standings.domain.response.standings.Standings')
     def test_contains_is_true_if_key_value_exists(self, standings):
