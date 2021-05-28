@@ -1,6 +1,32 @@
+from abc import ABC
 
 from backend.standings.common import logger_factory
 from backend.standings.domain.response.standings import Standings
+from redis import Redis
+
+
+class RedisCache:
+    """ This class sets up a connection to a Redis server and puts and retrieves data from the cache """
+    def __init__(self, host="localhost", port=6379, db=0):
+        self.redis_client = Redis(host=host, port=port, db=db)
+
+    def put(self, key: str, standings: Standings):
+        self.redis_client.set(key, standings)
+
+    def get(self, key: str) -> Standings:
+        return self.redis_client.get(key)
+
+
+class MongoDB:
+    """ This class creates a connection to a mongodb server and makes it possible to write and put data to the db"""
+    def __init__(self):
+        pass
+
+    def write(self, key, standings: Standings):
+        pass
+
+    def read(self, key: str) -> Standings:
+        pass
 
 
 class Database:
@@ -9,15 +35,18 @@ class Database:
         self.logger.info("Using {} database", self)
 
     def store(self, key: str, standings: Standings):
-        raise NotImplementedError("Method not implemented")
+        self._raise_not_implemented()
 
     def contains_key(self, key: str):
-        raise NotImplementedError("Method not implemented")
+        self._raise_not_implemented()
 
     def get(self, key):
-        raise NotImplementedError("Method not implemented")
+        self._raise_not_implemented()
 
     def __str__(self):
+        self._raise_not_implemented()
+
+    def _raise_not_implemented(self):
         raise NotImplementedError("Method not implemented")
 
     @staticmethod
@@ -29,6 +58,7 @@ class Database:
 
 
 class _InMemoryDatabase(Database):
+    """ This is an in memory database implementation which is not persistent and will mainly be used for testing """
     def __init__(self):
         super().__init__()
         self.database = {}
@@ -51,18 +81,22 @@ class _InMemoryDatabase(Database):
 
 
 class _RealDatabase(Database):
-    def __init__(self):
+    """Implementation of a real database that will facilitate saving and retrieving data from a distributed cache and
+    from the database """
+    def __init__(self, redis_cache: RedisCache, mongo_db: MongoDB):
         super().__init__()
+        self.redis_cache = redis_cache
+        self.mongo_db = mongo_db
 
     def __str__(self):
         return "real"
 
 
-def database_provider(in_memory: bool) -> Database:
+def database_provider(in_memory: bool, redis_cache=None, mongo_db=None) -> Database:
     if in_memory:
         return _InMemoryDatabase()
     else:
-        return _RealDatabase()
+        return _RealDatabase(redis_cache, mongo_db)
 
 
 class Storage:
