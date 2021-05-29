@@ -12,6 +12,18 @@ import json
 from backend.standings.common import logger_factory
 
 
+def _equality_tester(self_, clazz, other):
+    if isinstance(other, clazz):
+        for var in vars(self_):
+            var_of_self = getattr(self_, var)
+            var_of_other = getattr(other, var)
+
+            if var_of_self != var_of_other:
+                return False
+        return True
+    return False
+
+
 class Team:
     """ All the information about a team """
 
@@ -33,6 +45,9 @@ class Team:
     def get_homepage(self):
         return self.homepage
 
+    def __eq__(self, other):
+        return _equality_tester(self, Team, other)
+
     def __str__(self):
         return self.name
 
@@ -47,6 +62,9 @@ class Goals:
 
     def get_goals_against(self):
         return self.goals_against
+
+    def __eq__(self, other):
+        return _equality_tester(self, Goals, other)
 
 
 class Record:
@@ -85,6 +103,9 @@ class Record:
 
     def get_goal_diff(self):
         return self.goal_diff
+
+    def __eq__(self, other):
+        return _equality_tester(self, Record, other)
 
 
 class Records:
@@ -169,6 +190,9 @@ class Standing:
     def __str__(self):
         return json.dumps(self, default=lambda o: o.__dict__)
 
+    def __eq__(self, other):
+        return _equality_tester(self, Standing, other)
+
 
 class Standings:
     """ This is a collection of all standings for a league at a given time"""
@@ -189,6 +213,18 @@ class Standings:
 
     def as_json(self):
         return json.dumps(self, default=lambda o: o.__dict__, indent=4)
+
+    def __eq__(self, other):
+        if isinstance(other, Standings):
+            other_standings = other.get_all()
+            for rank in self.standings:
+                for_self = self.standings[rank]
+                for_other = other_standings[rank]
+
+                if for_self != for_other:
+                    return False
+            return True
+        return False
 
 
 def standing_builder(standing_response):
@@ -231,3 +267,9 @@ def _goals_builder(goals_response):
     goals_against = goals_response['against']
 
     return Goals(goals_for=goals_for, goals_against=goals_against)
+
+
+if __name__ == '__main__':
+    team = Team(2, 'Inter', 'https://media.api-sports.io/football/teams/505.png', 'https://www.inter.it/en')
+    for var in vars(team):
+        print(getattr(team, var))

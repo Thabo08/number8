@@ -110,8 +110,7 @@ class _RealDatabase(Database):
             self.redis_cache.put(key, standings)
         else:
             from_db = self.mongo_db.read(key)
-            if from_db is not None:
-                # todo: We could potentially have inconsistencies here between 'from_db and 'standings' - Address this
+            if from_db is not None and from_db == standings:
                 self.logger.info("Storing standings for %s in cache", key)
                 self.redis_cache.put(key, standings)
 

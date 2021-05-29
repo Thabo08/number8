@@ -24,14 +24,21 @@ class TeamTests(TestCase):
 
         self.assertEqual(self.team.__str__(), 'Inter')
 
+    def test_team_equality(self):
+        new_team = Team(2, 'Inter', 'team.png', 'https://www.inter.it/en')
+        self.assertEqual(new_team, self.team)
+
+        new_team = Team(20, 'Inter', 'team.png', 'https://www.inter.it/en')
+        self.assertNotEqual(new_team, self.team)
+
 
 class RecordTests(TestCase):
     def __init__(self, *args, **kwargs):
         super(RecordTests, self).__init__(*args, **kwargs)
+        self.record = Record("all", 20, 10, 5, 5, 20, 10)
 
     def test_should_return_expected_record_values(self):
         # played: int, wins: int, draws: int, loses: int, goals_for: int, goals_against: int
-        self.record = Record("all", 20, 10, 5, 5, 20, 10)
 
         self.assertEqual(20, self.record.get_played())
         self.assertEqual(10, self.record.get_wins())
@@ -40,6 +47,13 @@ class RecordTests(TestCase):
         self.assertEqual(20, self.record.get_goals_for())
         self.assertEqual(10, self.record.get_goals_against())
         self.assertEqual(10, self.record.get_goal_diff())
+
+    def test_record_equality(self):
+        new_record = Record("all", 20, 10, 5, 5, 20, 10)
+        self.assertEqual(self.record, new_record)
+
+        new_record = Record("all", 20, 10, 5, 5, 20, 3)
+        self.assertNotEqual(self.record, new_record)
 
 
 class RecordsTests(TestCase):
@@ -68,26 +82,45 @@ class RecordsTests(TestCase):
 class StandingTests(TestCase):
     def __init__(self, *args, **kwargs):
         super(StandingTests, self).__init__(*args, **kwargs)
+        self.team = Team(2, 'Inter', 'https://media.api-sports.io/football/teams/505.png', 'https://www.inter.it/en')
+        record = Record("all", 36, 27, 7, 2, 82, 31)
+        self.records = Records()
+        self.records.add_record(record)
+        self.standing = Standing(rank=1, team=self.team, points=88, group="Serie A", form="WWWWD", records=self.records)
 
     def test_should_return_expected_standing_values(self):
-        team = Team(2, 'Inter', 'https://media.api-sports.io/football/teams/505.png', 'https://www.inter.it/en')
-        record = Record("all", 36, 27, 7, 2, 82, 31)
-        records = Records()
-        records.add_record(record)
-        standing = Standing(rank=1, team=team, points=88, group="Serie A", form="WWWWD", records=records)
 
-        self.assertEqual(1, standing.get_rank())
-        self.assertEqual(team, standing.get_team())
-        self.assertEqual(88, standing.get_points())
-        self.assertEqual("Serie A", standing.get_group())
-        self.assertEqual("WWWWD", standing.get_form())
-        self.assertEqual(36, standing.get_played())
-        self.assertEqual(27, standing.get_wins())
-        self.assertEqual(7, standing.get_draws())
-        self.assertEqual(2, standing.get_loses())
-        self.assertEqual(82, standing.get_goals_for())
-        self.assertEqual(31, standing.get_goals_against())
-        self.assertEqual(51, standing.get_goal_diff())
+        self.assertEqual(1, self.standing.get_rank())
+        self.assertEqual(self.team, self.standing.get_team())
+        self.assertEqual(88, self.standing.get_points())
+        self.assertEqual("Serie A", self.standing.get_group())
+        self.assertEqual("WWWWD", self.standing.get_form())
+        self.assertEqual(36, self.standing.get_played())
+        self.assertEqual(27, self.standing.get_wins())
+        self.assertEqual(7, self.standing.get_draws())
+        self.assertEqual(2, self.standing.get_loses())
+        self.assertEqual(82, self.standing.get_goals_for())
+        self.assertEqual(31, self.standing.get_goals_against())
+        self.assertEqual(51, self.standing.get_goal_diff())
+
+    def test_standing_build_properly(self):
+        sample_standing_response = '{"rank": 1, "team": {"id": 505, "name": "Inter", "logo": ' \
+                                   '"https://media.api-sports.io/football/teams/505.png"}, "points": 88, "goalsDiff": ' \
+                                   '51, "group": "Serie A", "form": "WWWWD", "status": "same", "description": ' \
+                                   '"Promotion - Champions League (Group Stage)", "all": {"played": 36, "win": 27, ' \
+                                   '"draw": 7, "lose": 2, "goals": {"for": 82, "against": 31}}, "home": {"played": ' \
+                                   '18, "win": 16, "draw": 1, "lose": 1, "goals": {"for": 48, "against": 17}}, ' \
+                                   '"away": {"played": 18, "win": 11, "draw": 6, "lose": 1, "goals": {"for": 34, ' \
+                                   '"against": 14}}, "update": "2021-05-15T00:00:00+00:00"} '
+        standing = standing_builder(json.loads(sample_standing_response))
+        self.assertIsNotNone(standing)
+
+    def test_standing_equality(self):
+        new_standing = Standing(rank=1, team=self.team, points=88, group="Serie A", form="WWWWD", records=self.records)
+        self.assertEqual(self.standing, new_standing)
+
+        new_standing = Standing(rank=3, team=self.team, points=90, group="Serie A", form="WWWWD", records=self.records)
+        self.assertNotEqual(self.standing, new_standing)
 
 
 class StandingsTests(TestCase):
@@ -104,14 +137,4 @@ class StandingsTests(TestCase):
         standings.add(mock_standing)
         self.assertFalse(standings.is_empty())
 
-    def test_standing_build_properly(self):
-        sample_standing_response = '{"rank": 1, "team": {"id": 505, "name": "Inter", "logo": ' \
-                                   '"https://media.api-sports.io/football/teams/505.png"}, "points": 88, "goalsDiff": ' \
-                                   '51, "group": "Serie A", "form": "WWWWD", "status": "same", "description": ' \
-                                   '"Promotion - Champions League (Group Stage)", "all": {"played": 36, "win": 27, ' \
-                                   '"draw": 7, "lose": 2, "goals": {"for": 82, "against": 31}}, "home": {"played": ' \
-                                   '18, "win": 16, "draw": 1, "lose": 1, "goals": {"for": 48, "against": 17}}, ' \
-                                   '"away": {"played": 18, "win": 11, "draw": 6, "lose": 1, "goals": {"for": 34, ' \
-                                   '"against": 14}}, "update": "2021-05-15T00:00:00+00:00"} '
-        standing = standing_builder(json.loads(sample_standing_response))
-        self.assertIsNotNone(standing)
+
