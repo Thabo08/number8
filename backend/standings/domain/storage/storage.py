@@ -14,7 +14,7 @@ class RedisCache:
         self.redis_client.set(key, standings)
 
     def get(self, key: str) -> Standings:
-        return self.redis_client.get(key)
+        return None#self.redis_client.get(key)
 
 
 class MongoDB:
@@ -26,7 +26,7 @@ class MongoDB:
         pass
 
     def read(self, key: str) -> Standings:
-        pass
+        return None
 
 
 class Database:
@@ -35,12 +35,26 @@ class Database:
         self.logger.info("Using {} database", self)
 
     def store(self, key: str, standings: Standings):
+        """ Stores value for key to database
+
+            :param key Key for value
+            :param standings Standings value to store
+        """
         self._raise_not_implemented()
 
     def contains_key(self, key: str):
+        """ Checks if a value for the key exists in the database
+
+            :param key Key for value
+            :returns True if value for key exists, otherwise False
+        """
         self._raise_not_implemented()
 
     def get(self, key):
+        """ Gets value for key from the database
+
+            :param key Key for value
+         """
         self._raise_not_implemented()
 
     def __str__(self):
@@ -64,7 +78,7 @@ class _InMemoryDatabase(Database):
         self.database = {}
 
     def store(self, key, standings):
-        self.logger.info("Storing standings for %s", key)
+        self.logger.info("Storing standings for %s in memory database", key)
         self.database[key] = standings
 
     def contains_key(self, key):
@@ -87,6 +101,28 @@ class _RealDatabase(Database):
         super().__init__()
         self.redis_cache = redis_cache
         self.mongo_db = mongo_db
+
+    def store(self, key: str, standings: Standings):
+        is_new_entry = self.redis_cache.get(key) is None and self.mongo_db.read(key) is None
+        if is_new_entry:
+            self.logger.info("Storing standings for %s in database and cache", key)
+            self.mongo_db.write(key, standings)
+            self.redis_cache.put(key, standings)
+        else:
+            from_db = self.mongo_db.read(key)
+            if from_db is not None:
+                # todo: We could potentially have inconsistencies here between 'from_db and 'standings' - Address this
+                self.logger.info("Storing standings for %s in cache", key)
+                self.redis_cache.put(key, standings)
+
+    def contains_key(self, key: str):
+        exists = self.redis_cache.get(key) is not None
+        message = "Standings for key {} exist".format(key if exists else key + " does not ")
+        self.logger.info(message)
+        return exists
+
+    def get(self, key):
+        return self.redis_cache.get(key)
 
     def __str__(self):
         return "real"
