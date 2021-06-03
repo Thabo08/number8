@@ -9,19 +9,8 @@
 
 import json
 
+from backend.standings.common import equality_tester
 from backend.standings.common import logger_factory
-
-
-def _equality_tester(self_, clazz, other):
-    if isinstance(other, clazz):
-        for var in vars(self_):
-            var_of_self = getattr(self_, var)
-            var_of_other = getattr(other, var)
-
-            if var_of_self != var_of_other:
-                return False
-        return True
-    return False
 
 
 class Team:
@@ -46,7 +35,7 @@ class Team:
         return self.homepage
 
     def __eq__(self, other):
-        return _equality_tester(self, Team, other)
+        return equality_tester(self, Team, other)
 
     def __str__(self):
         return self.name
@@ -64,7 +53,7 @@ class Goals:
         return self.goals_against
 
     def __eq__(self, other):
-        return _equality_tester(self, Goals, other)
+        return equality_tester(self, Goals, other)
 
 
 class Record:
@@ -105,7 +94,7 @@ class Record:
         return self.goal_diff
 
     def __eq__(self, other):
-        return _equality_tester(self, Record, other)
+        return equality_tester(self, Record, other)
 
 
 class Records:
@@ -191,7 +180,7 @@ class Standing:
         return json.dumps(self, default=lambda o: o.__dict__)
 
     def __eq__(self, other):
-        return _equality_tester(self, Standing, other)
+        return equality_tester(self, Standing, other)
 
 
 class Standings:

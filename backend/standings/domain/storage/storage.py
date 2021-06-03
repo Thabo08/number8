@@ -1,13 +1,23 @@
-from abc import ABC
-
-from backend.standings.common import logger_factory
-from backend.standings.domain.response.standings import Standings
 from redis import Redis
 
+from backend.standings.common import equality_tester
+from backend.standings.common import logger_factory
+from backend.standings.domain.response.standings import Standings
 
 
 class Key:
     """ Holds storage key """
+    def __init__(self, alias, season):
+        self.key = "{0}_{1}".format(alias, season)
+
+    def __eq__(self, other):
+        return equality_tester(self, Key, other)
+
+    def __hash__(self):
+        return hash(self.key)
+
+    def __str__(self):
+        return self.key
 
 
 class RedisCache:
@@ -15,10 +25,10 @@ class RedisCache:
     def __init__(self, host="localhost", port=6379, db=0):
         self.redis_client = Redis(host=host, port=port, db=db)
 
-    def put(self, key: str, standings: Standings):
+    def put(self, key: Key, standings: Standings):
         self.redis_client.set(key, standings)
 
-    def get(self, key: str) -> Standings:
+    def get(self, key: Key) -> Standings:
         return None#self.redis_client.get(key)
 
 
@@ -27,10 +37,10 @@ class MongoDB:
     def __init__(self):
         pass
 
-    def write(self, key, standings: Standings):
+    def write(self, key: Key, standings: Standings):
         pass
 
-    def read(self, key: str) -> Standings:
+    def read(self, key: Key) -> Standings:
         return None
 
 
@@ -39,7 +49,7 @@ class Database:
         self.logger = logger_factory(Database.__name__)
         self.logger.info("Using {} database", self)
 
-    def store(self, key: str, standings: Standings):
+    def store(self, key: Key, standings: Standings):
         """ Stores value for key to database
 
             :param key Key for value
@@ -47,7 +57,7 @@ class Database:
         """
         self._raise_not_implemented()
 
-    def check_and_get(self, key: str):
+    def check_and_get(self, key: Key):
         """ Checks if a value for a given key exists and returns it if that's the case
 
             :param key Key for value
@@ -75,14 +85,14 @@ class _InMemoryDatabase(Database):
         super().__init__()
         self.database = {}
 
-    def store(self, key, standings):
+    def store(self, key: Key, standings: Standings):
         self.logger.info("Storing standings for %s in memory database", key)
         self.database[key] = standings
 
-    def check_and_get(self, key: str):
+    def check_and_get(self, key: Key):
         from_in_mem = self.database.get(key)
         exists = from_in_mem is not None
-        message = "Standings for key {} exist".format(key if exists else key + " does not ")
+        message = "Standings for key {} exist".format(key if exists else key.__str__() + " does not ")
         self.logger.info(message)
 
         return exists, from_in_mem
@@ -99,7 +109,7 @@ class _RealDatabase(Database):
         self.redis_cache = redis_cache
         self.mongo_db = mongo_db
 
-    def store(self, key: str, standings: Standings):
+    def store(self, key: Key, standings: Standings):
         is_new_entry = self.redis_cache.get(key) is None and self.mongo_db.read(key) is None
         if is_new_entry:
             self.logger.info("Storing standings for %s in database and cache", key)
@@ -111,7 +121,7 @@ class _RealDatabase(Database):
                 self.logger.info("Storing standings for %s in cache", key)
                 self.redis_cache.put(key, standings)
 
-    def check_and_get(self, key: str):
+    def check_and_get(self, key: Key):
         try:
             from_cache = self.redis_cache.get(key)
             in_cache = from_cache is not None
@@ -142,8 +152,8 @@ class Storage:
     def __init__(self, database: Database):
         self.database = database
 
-    def store(self, key, standings: Standings):
+    def store(self, key: Key, standings: Standings):
         self.database.store(key, standings)
 
-    def check_and_get(self, key):
+    def check_and_get(self, key: Key):
         return self.database.check_and_get(key)

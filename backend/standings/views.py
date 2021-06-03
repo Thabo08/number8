@@ -11,6 +11,7 @@ import requests
 
 from backend.standings.domain.response.standings import standing_builder
 from backend.standings.domain.storage.storage import Database
+from backend.standings.domain.storage.storage import Key
 from backend.standings.domain.storage.storage import Storage
 from backend.standings.domain.storage.storage import database_provider
 
@@ -40,10 +41,6 @@ class LazyView(object):
         return self.view(*args, **kwargs)
 
 
-def storage_key(league, season):
-    return "{0}_{1}".format(league, season)
-
-
 def get_league_standings(league, season):
 
     alias = league
@@ -51,7 +48,7 @@ def get_league_standings(league, season):
     league = escape(league.get_league_id())
     season = escape(season)
 
-    key = storage_key(alias, season)
+    key = Key(alias, season)
     in_cache, standings = storage.check_and_get(key)
     if in_cache:
         logger.info("Retrieving '%s' season standings for '%s' league from database", season, alias)

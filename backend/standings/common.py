@@ -23,3 +23,16 @@ def configure_logger(config_file):
     with open(config_file, 'r') as f:
         logger_config = yaml.safe_load(f.read())
         logging.config.dictConfig(logger_config)
+
+
+def equality_tester(self_, clazz, other):
+    if isinstance(other, clazz):
+        for var in vars(self_):
+            var_of_self = getattr(self_, var)
+            var_of_other = getattr(other, var)
+
+            if var_of_self != var_of_other:
+                return False
+        return True
+    return False
+

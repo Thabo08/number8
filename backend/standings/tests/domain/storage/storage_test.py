@@ -2,6 +2,7 @@ from unittest import TestCase
 from unittest import mock
 
 from backend.standings.domain.storage.storage import Database
+from backend.standings.domain.storage.storage import Key
 from backend.standings.domain.storage.storage import Storage
 from backend.standings.domain.storage.storage import database_provider
 
@@ -15,7 +16,7 @@ class StorageTestCases(TestCase):
     def __init__(self, *args, **kwargs):
         super(StorageTestCases, self).__init__(*args, **kwargs)
         self.in_memory_storage = _test_storage("in_memory")
-        self.key = "epl_2020"
+        self.key = Key("epl", "2020")
 
     @mock.patch('backend.standings.domain.response.standings.Standings')
     def test_contains_is_true_if_key_value_exists(self, mock_standings):
@@ -29,7 +30,7 @@ class StorageTestCases(TestCase):
 
     def test_contains_is_false_if_key_value_does_not_exist(self):
         # given
-        in_cache, _ = self.in_memory_storage.check_and_get("rubbish")
+        in_cache, _ = self.in_memory_storage.check_and_get(Key("rubbish", "year"))
 
         # then
         self.assertFalse(in_cache)
@@ -38,15 +39,16 @@ class StorageTestCases(TestCase):
     @mock.patch('backend.standings.domain.response.standings.Standings')
     def test_gets_different_standings_for_different_keys(self, epl, seriea):
         self.in_memory_storage.store(self.key, epl)
-        self.in_memory_storage.store("seriea_2020", seriea)
+        seriea_key = Key("seriea", "2020")
+        self.in_memory_storage.store(seriea_key, seriea)
 
         epl_exists, epl_standings = self.in_memory_storage.check_and_get(self.key)
-        seriea_exists, seriea_standings = self.in_memory_storage.check_and_get("seriea_2020")
+        seriea_exists, seriea_standings = self.in_memory_storage.check_and_get(seriea_key)
 
         self.assertNotEqual(epl_standings, seriea_standings)
 
         self.assertEqual(epl_standings, self.in_memory_storage.check_and_get(self.key)[1])
-        self.assertEqual(seriea_standings, self.in_memory_storage.check_and_get("seriea_2020")[1])
+        self.assertEqual(seriea_standings, self.in_memory_storage.check_and_get(seriea_key)[1])
 
     @mock.patch('backend.standings.domain.storage.storage.RedisCache')
     @mock.patch('backend.standings.domain.storage.storage.MongoDB')
