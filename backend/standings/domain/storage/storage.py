@@ -126,7 +126,7 @@ class _RealDatabase(Database):
             from_cache = self.redis_cache.get(key)
             in_cache = from_cache is not None
             if not in_cache:
-                self.logger.info("Standings for %s not found in cache. Checking in database", key)
+                self.logger.info("Standings for %s not found in cache. Checking in database", key.__str__())
                 from_db = self.mongo_db.read(key)
                 if from_db is not None:
                     self.redis_cache.put(key, from_db)
@@ -134,7 +134,8 @@ class _RealDatabase(Database):
                     in_cache = True
             return in_cache, from_cache
         except Exception:
-            raise Exception("Error reading from storage")
+            self.logger.error("Error reading from storage for key: %s", key.__str__())
+            raise Exception("Error reading from storage for key: " + key.__str__())
 
     def __str__(self):
         return "real"
