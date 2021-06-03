@@ -52,8 +52,10 @@ def get_league_standings(league, season):
     season = escape(season)
 
     key = storage_key(alias, season)
-    if storage.contains_standings(key):
-        return get_from_storage(alias, key, season)
+    in_cache, standings = storage.check_and_get(key)
+    if in_cache:
+        logger.info("Retrieving '%s' season standings for '%s' league from database", season, alias)
+        return standings.as_json()
 
     return get_from_server(alias, key, league, season)
 
@@ -76,8 +78,3 @@ def get_from_server(alias, key, league, season):
     storage.store(key, standings)
     return standings.as_json()
 
-
-def get_from_storage(alias, key, season):
-    logger.info("Retrieving '%s' season standings for '%s' league from database", season, alias)
-    standings = storage.get(key)
-    return standings.as_json()

@@ -267,9 +267,3 @@ def _goals_builder(goals_response):
     goals_against = goals_response['against']
 
     return Goals(goals_for=goals_for, goals_against=goals_against)
-
-
-if __name__ == '__main__':
-    team = Team(2, 'Inter', 'https://media.api-sports.io/football/teams/505.png', 'https://www.inter.it/en')
-    for var in vars(team):
-        print(getattr(team, var))
