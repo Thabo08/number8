@@ -1,4 +1,5 @@
 from redis import Redis
+from pymongo import MongoClient
 
 from backend.standings.common import equality_tester
 from backend.standings.common import logger_factory
@@ -24,24 +25,59 @@ class RedisCache:
     """ This class sets up a connection to a Redis server and puts and retrieves data from the cache """
     def __init__(self, host="localhost", port=6379, db=0):
         self.redis_client = Redis(host=host, port=port, db=db)
+        self.logger = logger_factory(RedisCache.__name__)
+
+        self.logger.info("Initialised Redis Cache on: %s:%s", host, port)
 
     def put(self, key: Key, standings: Standings):
-        self.redis_client.set(key, standings)
+        try:
+            key = key.__str__()
+            self.redis_client.set(key, standings)
+            self.logger.debug("Inserted %s for key %s", standings, key)
+        except Exception:
+            self.logger.error("Could not insert %s for key %s", standings, key)
+            raise Exception("Could not insert {} for key {}".format(standings, key))
 
     def get(self, key: Key) -> Standings:
-        return None#self.redis_client.get(key)
+        try:
+            key = key.__str__()
+            standings = self.redis_client.get(key)
+            self.logger.debug("Retrieved %s for key %s from Redis Cache", standings, key)
+            return standings
+        except Exception:
+            self.logger.error("Could not retrieve standings for key %s from Redis Cache", key)
+            raise Exception("Could not retrieve standings for key {} from Redis Cache".format(key))
 
 
 class MongoDB:
     """ This class creates a connection to a mongodb server and makes it possible to write and put data to the db"""
-    def __init__(self):
-        pass
+    def __init__(self, host="localhost", port=27017, database_name="standings", collection_name="static_standings"):
+        """ Sets up a connection to mongodb """
+        mongo_client = MongoClient("mongodb://{}:{}".format(host, port))
+        database = mongo_client[database_name]
+        self.collection = database[collection_name]
+
+        self.logger = logger_factory(MongoDB.__name__)
+        self.logger.info("Initialised MongoDB connection on: %s:%s", host, port)
 
     def write(self, key: Key, standings: Standings):
-        pass
+        try:
+            entry = {"key": key, "standings": standings}
+            result = self.collection.insert_one(entry)
+            self.logger.debug("ID - %s: Inserted %s for key %s", result.inserted_id, standings, key)
+        except Exception:
+            self.logger.error("Could not insert %s for key %s", standings, key)
+            raise Exception("Could not insert {} for key {}".format(standings, key))
 
     def read(self, key: Key) -> Standings:
-        return None
+        try:
+            query = {"key": key.__str__()}  # todo: Check if we need to use key.__str()__ call here
+            standings = self.collection.find_one(query)
+            self.logger.debug("Retrieved %s for key %s from MongoDB", standings, key)
+            return standings
+        except Exception:
+            self.logger.error("Could not retrieve standings for key %s from MongoDB", key)
+            raise Exception("Could not retrieve standings for key {} from MongoDB".format(key))
 
 
 class Database:

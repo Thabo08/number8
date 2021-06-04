@@ -215,6 +215,9 @@ class Standings:
             return True
         return False
 
+    def __str__(self):
+        return self.as_json()
+
 
 def standing_builder(standing_response):
     """ Builds a standing from json text
