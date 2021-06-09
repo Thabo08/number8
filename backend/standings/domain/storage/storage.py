@@ -1,25 +1,23 @@
+import pickle
 from bson import CodecOptions
-from bson.codec_options import TypeCodec
+from bson.binary import Binary
+from bson.binary import USER_DEFINED_SUBTYPE
 from bson.codec_options import TypeDecoder
 from bson.codec_options import TypeRegistry
-from redis import Redis
 from pymongo import MongoClient
-from pymongo.son_manipulator import SONManipulator
+from redis import Redis
 
 from backend.standings.common import equality_tester
 from backend.standings.common import logger_factory
+from backend.standings.domain.response.standings import Record
+from backend.standings.domain.response.standings import Records
+from backend.standings.domain.response.standings import Standing
 from backend.standings.domain.response.standings import Standings
-
-import pickle
-from bson.binary import Binary, USER_DEFINED_SUBTYPE
+from backend.standings.domain.response.standings import Team
 
 
 def fallback_pickle_encoder(value):
     return Binary(pickle.dumps(value), USER_DEFINED_SUBTYPE)
-
-
-def fallback_pickle_decoder(value):
-    return pickle.loads(value)
 
 
 def to_binary(standings: Standings):
@@ -27,31 +25,21 @@ def to_binary(standings: Standings):
 
 
 def from_binary(binary):
-    # standings = Standings()
-    # return standings.from_binary(str(binary))
     return pickle.loads(binary)
 
 
-class Transform(SONManipulator):
-    def transform_incoming(self, son, collection):
-        for (key, value) in son.items():
-            if isinstance(value, Standings):
-                son[key] = to_binary(value)
-            elif isinstance(value, dict):  # Make sure we recurse into sub-docs
-                son[key] = self.transform_incoming(value, collection)
-        return son
+class PickledBinaryDecoder(TypeDecoder):
+    bson_type = Binary
 
-    def transform_outgoing(self, son, collection):
-        for (key, value) in son.items():
-            if isinstance(value, Binary) and value.subtype == 128:
-                son[key] = from_binary(value)
-            elif isinstance(value, dict):
-                son[key] = self.transform_outgoing(value, collection)
-        return son
+    def transform_bson(self, value):
+        if value.subtype == USER_DEFINED_SUBTYPE:
+            return pickle.loads(value)
+        return value
 
 
 class Key:
     """ Holds storage key """
+
     def __init__(self, alias, season):
         self.key = "{0}_{1}".format(alias, season)
 
@@ -67,17 +55,21 @@ class Key:
 
 class RedisCache:
     """ This class sets up a connection to a Redis server and puts and retrieves data from the cache """
+
     def __init__(self, host="localhost", port=6379, db=0):
         self.redis_client = Redis(host=host, port=port, db=db)
-        # self.redis_client.flushdb()
+        # self.flush()
         self.logger = logger_factory(RedisCache.__name__)
 
         self.logger.info("Initialised Redis Cache on: %s:%s", host, port)
 
+    def flush(self):
+        self.redis_client.flushdb()
+
     def put(self, key: Key, standings: Standings):
         try:
             key = key.__str__()
-            self.redis_client.set(key, standings)
+            self.redis_client.set(key, to_binary(standings))
             self.logger.debug("Inserted %s for key %s", standings, key)
         except Exception as e:
             self.logger.error("Could not insert %s for key %s. Error message: %s", standings, key, e.__str__())
@@ -88,7 +80,7 @@ class RedisCache:
             key = key.__str__()
             standings = self.redis_client.get(key)
             self.logger.debug("Retrieved %s for key %s from Redis Cache", standings, key)
-            return standings
+            return from_binary(standings)
         except Exception as e:
             self.logger.error("Could not retrieve standings for key %s from Redis Cache. Error message: %s",
                               key, e.__str__())
@@ -98,14 +90,20 @@ class RedisCache:
 
 class MongoDB:
     """ This class creates a connection to a mongodb server and makes it possible to write and put data to the db"""
+
     def __init__(self, host="localhost", port=27017, username="admin", password="pass", admin_db="admin",
                  database_name="standings", collection_name="static_standings"):
         """ Sets up a connection to mongodb """
 
         mongo_client = MongoClient("mongodb://{}:{}@{}:{}/?authSource={}&authMechanism=SCRAM-SHA-1"
                                    .format(username, password, host, port, admin_db))
+
+        codec_options = CodecOptions(type_registry=TypeRegistry(
+            [PickledBinaryDecoder()], fallback_encoder=fallback_pickle_encoder))
+
         database = mongo_client[database_name]
-        self.collection = database[collection_name]
+
+        self.collection = database.get_collection(collection_name, codec_options=codec_options)
 
         self.logger = logger_factory(MongoDB.__name__)
         self.logger.info("Initialised MongoDB connection on: %s:%s", host, port)
@@ -113,6 +111,7 @@ class MongoDB:
     def write(self, key: Key, standings: Standings):
         try:
             entry = {"key": key.__str__(), "standings": standings}
+            self.collection.create_index(key.__str__())
             result = self.collection.insert_one(entry)
             self.logger.debug("ID - %s: Inserted %s for key %s", result.inserted_id, standings, key)
         except Exception as e:
@@ -122,7 +121,7 @@ class MongoDB:
     def read(self, key: Key) -> Standings:
         try:
             query = {"key": key.__str__()}
-            standings = self.collection.find_one(query)
+            standings = self.collection.find_one(query)['standings']
             self.logger.debug("Retrieved %s for key %s from MongoDB", standings, key)
             return standings
         except Exception as e:
@@ -168,6 +167,7 @@ class Database:
 
 class _InMemoryDatabase(Database):
     """ This is an in memory database implementation which is not persistent and will mainly be used for testing """
+
     def __init__(self):
         super().__init__()
         self.database = {}
@@ -191,6 +191,7 @@ class _InMemoryDatabase(Database):
 class _RealDatabase(Database):
     """Implementation of a real database that will facilitate saving and retrieving data from a distributed cache and
     from the database """
+
     def __init__(self, redis_cache: RedisCache, mongo_db: MongoDB):
         super().__init__()
         self.redis_cache = redis_cache
@@ -238,6 +239,7 @@ def database_provider(in_memory: bool, redis_cache=None, mongo_db=None) -> Datab
 
 class Storage:
     """ Interface that makes it known to the caller whether the required standings are in the storage or not """
+
     def __init__(self, database: Database):
         self.database = database
 
@@ -246,3 +248,29 @@ class Storage:
 
     def check_and_get(self, key: Key):
         return self.database.check_and_get(key)
+
+
+if __name__ == '__main__':
+    # Some test code
+    redis_cache = RedisCache()
+    redis_cache.flush()
+    team = Team(2, 'Inter', 'https://media.api-sports.io/football/teams/505.png', 'https://www.inter.it/en')
+    record = Record("all", 36, 27, 7, 2, 82, 31)
+    records = Records()
+    records.add_record(record)
+    standing = Standing(rank=1, team=team, points=88, group="Serie A", form="WWWWD", records=records)
+    standings = Standings()
+    standings.add(standing)
+    key = Key("test", "2021")
+    redis_cache.put(key, to_binary(standings))
+
+    from_cache = from_binary(redis_cache.get(key))
+    print(from_cache)
+
+    mongo_cache = MongoDB()
+
+    mongo_cache.write(key, standings)
+    from_mongo = mongo_cache.read(key)
+
+    print()
+    print(from_mongo.as_json())

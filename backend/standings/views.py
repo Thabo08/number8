@@ -12,6 +12,8 @@ import requests
 from backend.standings.domain.response.standings import standing_builder
 from backend.standings.domain.storage.storage import Database
 from backend.standings.domain.storage.storage import Key
+from backend.standings.domain.storage.storage import MongoDB
+from backend.standings.domain.storage.storage import RedisCache
 from backend.standings.domain.storage.storage import Storage
 from backend.standings.domain.storage.storage import database_provider
 
@@ -24,7 +26,14 @@ API_VERSION = CONFIG['rapidapi_version']
 API_KEY = CONFIG['rapidapi_key']
 BASE_PATH = "standings"
 
-storage = Storage(database_provider(Database.is_in_memory("in_memory")))
+storage_type = "in_memory"
+if storage_type == "in_memory":
+    storage = Storage(database_provider(Database.is_in_memory(storage_type)))
+else:
+    redis_cache = RedisCache()
+    mongo_db = MongoDB()
+    storage = Storage(database_provider(Database.is_in_memory(storage_type),
+                                        redis_cache=redis_cache, mongo_db=mongo_db))
 
 
 class LazyView(object):
