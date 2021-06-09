@@ -1,9 +1,53 @@
+from bson import CodecOptions
+from bson.codec_options import TypeCodec
+from bson.codec_options import TypeDecoder
+from bson.codec_options import TypeRegistry
 from redis import Redis
 from pymongo import MongoClient
+from pymongo.son_manipulator import SONManipulator
 
 from backend.standings.common import equality_tester
 from backend.standings.common import logger_factory
 from backend.standings.domain.response.standings import Standings
+
+import pickle
+from bson.binary import Binary, USER_DEFINED_SUBTYPE
+
+
+def fallback_pickle_encoder(value):
+    return Binary(pickle.dumps(value), USER_DEFINED_SUBTYPE)
+
+
+def fallback_pickle_decoder(value):
+    return pickle.loads(value)
+
+
+def to_binary(standings: Standings):
+    return Binary(pickle.dumps(standings), USER_DEFINED_SUBTYPE)
+
+
+def from_binary(binary):
+    # standings = Standings()
+    # return standings.from_binary(str(binary))
+    return pickle.loads(binary)
+
+
+class Transform(SONManipulator):
+    def transform_incoming(self, son, collection):
+        for (key, value) in son.items():
+            if isinstance(value, Standings):
+                son[key] = to_binary(value)
+            elif isinstance(value, dict):  # Make sure we recurse into sub-docs
+                son[key] = self.transform_incoming(value, collection)
+        return son
+
+    def transform_outgoing(self, son, collection):
+        for (key, value) in son.items():
+            if isinstance(value, Binary) and value.subtype == 128:
+                son[key] = from_binary(value)
+            elif isinstance(value, dict):
+                son[key] = self.transform_outgoing(value, collection)
+        return son
 
 
 class Key:
@@ -25,6 +69,7 @@ class RedisCache:
     """ This class sets up a connection to a Redis server and puts and retrieves data from the cache """
     def __init__(self, host="localhost", port=6379, db=0):
         self.redis_client = Redis(host=host, port=port, db=db)
+        # self.redis_client.flushdb()
         self.logger = logger_factory(RedisCache.__name__)
 
         self.logger.info("Initialised Redis Cache on: %s:%s", host, port)
@@ -34,9 +79,9 @@ class RedisCache:
             key = key.__str__()
             self.redis_client.set(key, standings)
             self.logger.debug("Inserted %s for key %s", standings, key)
-        except Exception:
-            self.logger.error("Could not insert %s for key %s", standings, key)
-            raise Exception("Could not insert {} for key {}".format(standings, key))
+        except Exception as e:
+            self.logger.error("Could not insert %s for key %s. Error message: %s", standings, key, e.__str__())
+            raise Exception("Could not insert {} for key {}. Error message: %s".format(standings, key, e.__str__()))
 
     def get(self, key: Key) -> Standings:
         try:
@@ -44,16 +89,21 @@ class RedisCache:
             standings = self.redis_client.get(key)
             self.logger.debug("Retrieved %s for key %s from Redis Cache", standings, key)
             return standings
-        except Exception:
-            self.logger.error("Could not retrieve standings for key %s from Redis Cache", key)
-            raise Exception("Could not retrieve standings for key {} from Redis Cache".format(key))
+        except Exception as e:
+            self.logger.error("Could not retrieve standings for key %s from Redis Cache. Error message: %s",
+                              key, e.__str__())
+            raise Exception("Could not retrieve standings for key {} from Redis Cache. Error message: {}"
+                            .format(key, e.__str__()))
 
 
 class MongoDB:
     """ This class creates a connection to a mongodb server and makes it possible to write and put data to the db"""
-    def __init__(self, host="localhost", port=27017, database_name="standings", collection_name="static_standings"):
+    def __init__(self, host="localhost", port=27017, username="admin", password="pass", admin_db="admin",
+                 database_name="standings", collection_name="static_standings"):
         """ Sets up a connection to mongodb """
-        mongo_client = MongoClient("mongodb://{}:{}".format(host, port))
+
+        mongo_client = MongoClient("mongodb://{}:{}@{}:{}/?authSource={}&authMechanism=SCRAM-SHA-1"
+                                   .format(username, password, host, port, admin_db))
         database = mongo_client[database_name]
         self.collection = database[collection_name]
 
@@ -62,22 +112,23 @@ class MongoDB:
 
     def write(self, key: Key, standings: Standings):
         try:
-            entry = {"key": key, "standings": standings}
+            entry = {"key": key.__str__(), "standings": standings}
             result = self.collection.insert_one(entry)
             self.logger.debug("ID - %s: Inserted %s for key %s", result.inserted_id, standings, key)
-        except Exception:
-            self.logger.error("Could not insert %s for key %s", standings, key)
-            raise Exception("Could not insert {} for key {}".format(standings, key))
+        except Exception as e:
+            self.logger.error("Could not insert %s for key %s. Error message: %s", standings, key, e.__str__())
+            raise Exception("Could not insert {} for key {}. Error message: {}".format(standings, key, e.__str__()))
 
     def read(self, key: Key) -> Standings:
         try:
-            query = {"key": key.__str__()}  # todo: Check if we need to use key.__str()__ call here
+            query = {"key": key.__str__()}
             standings = self.collection.find_one(query)
             self.logger.debug("Retrieved %s for key %s from MongoDB", standings, key)
             return standings
-        except Exception:
-            self.logger.error("Could not retrieve standings for key %s from MongoDB", key)
-            raise Exception("Could not retrieve standings for key {} from MongoDB".format(key))
+        except Exception as e:
+            self.logger.error("Could not retrieve standings for key %s from MongoDB. Error message: ", key, e.__str__())
+            raise Exception("Could not retrieve standings for key {} from MongoDB. Error message: {}"
+                            .format(key, e.__str__()))
 
 
 class Database:
@@ -169,9 +220,10 @@ class _RealDatabase(Database):
                     from_cache = from_db
                     in_cache = True
             return in_cache, from_cache
-        except Exception:
-            self.logger.error("Error reading from storage for key: %s", key.__str__())
-            raise Exception("Error reading from storage for key: " + key.__str__())
+        except Exception as e:
+            self.logger.error("Error reading from storage for key: %s. Error message: %s", key.__str__(), e.__str__())
+            raise Exception("Error reading from storage for key: {}. Error message: {}"
+                            .format(key.__str__(), e.__str__()))
 
     def __str__(self):
         return "real"
