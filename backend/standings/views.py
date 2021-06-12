@@ -27,7 +27,7 @@ API_VERSION = CONFIG['rapidapi_version']
 API_KEY = CONFIG['rapidapi_key']
 BASE_PATH = "standings"
 
-storage_type = "in_memory"
+storage_type = "real_database"
 if storage_type == "in_memory":
     storage = Storage(database_provider(Database.is_in_memory(storage_type)))
 else:

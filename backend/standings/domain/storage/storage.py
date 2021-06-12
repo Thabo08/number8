@@ -9,11 +9,8 @@ from redis import Redis
 
 from backend.standings.common import equality_tester
 from backend.standings.common import logger_factory
-from backend.standings.domain.response.standings import Record
-from backend.standings.domain.response.standings import Records
-from backend.standings.domain.response.standings import Standing
+from backend.standings.domain.response.standings import MockStandingsSource
 from backend.standings.domain.response.standings import Standings
-from backend.standings.domain.response.standings import Team
 
 
 def fallback_pickle_encoder(value):
@@ -58,12 +55,12 @@ class RedisCache:
 
     def __init__(self, host="localhost", port=6379, db=0):
         self.redis_client = Redis(host=host, port=port, db=db)
-        # self.flush()
+        self._flush()
         self.logger = logger_factory(RedisCache.__name__)
 
         self.logger.info("Initialised Redis Cache on: %s:%s", host, port)
 
-    def flush(self):
+    def _flush(self):
         self.redis_client.flushdb()
 
     def put(self, key: Key, standings: Standings):
@@ -75,12 +72,16 @@ class RedisCache:
             self.logger.error("Could not insert %s for key %s. Error message: %s", standings, key, e.__str__())
             raise Exception("Could not insert {} for key {}. Error message: %s".format(standings, key, e.__str__()))
 
-    def get(self, key: Key) -> Standings:
+    def get(self, key: Key):
         try:
             key = key.__str__()
             standings = self.redis_client.get(key)
-            self.logger.debug("Retrieved %s for key %s from Redis Cache", standings, key)
-            return from_binary(standings)
+            if standings is not None:
+                self.logger.debug("Retrieved %s for key %s from Redis Cache", standings, key)
+                return from_binary(standings)
+            else:
+                self.logger.debug("Standings for key %s not in Redis Cache", key)
+                return standings
         except Exception as e:
             self.logger.error("Could not retrieve standings for key %s from Redis Cache. Error message: %s",
                               key, e.__str__())
@@ -118,12 +119,18 @@ class MongoDB:
             self.logger.error("Could not insert %s for key %s. Error message: %s", standings, key, e.__str__())
             raise Exception("Could not insert {} for key {}. Error message: {}".format(standings, key, e.__str__()))
 
-    def read(self, key: Key) -> Standings:
+    def read(self, key: Key):
+        """ Returns Standings if found in database for key, else None"""
         try:
             query = {"key": key.__str__()}
-            standings = self.collection.find_one(query)['standings']
-            self.logger.debug("Retrieved %s for key %s from MongoDB", standings, key)
-            return standings
+            standings = self.collection.find_one(query)
+            if standings is not None:
+                standings = standings[Standings.mongo_key()]
+                self.logger.debug("Retrieved %s for key %s from MongoDB", standings, key)
+                return standings
+            else:
+                self.logger.debug("Standings for key %s not in MongoDB", key)
+                return standings
         except Exception as e:
             self.logger.error("Could not retrieve standings for key %s from MongoDB. Error message: ", key, e.__str__())
             raise Exception("Could not retrieve standings for key {} from MongoDB. Error message: {}"
@@ -253,15 +260,8 @@ class Storage:
 if __name__ == '__main__':
     # Some test code
     redis_cache = RedisCache()
-    redis_cache.flush()
-    team = Team(2, 'Inter', 'https://media.api-sports.io/football/teams/505.png', 'https://www.inter.it/en')
-    record = Record("all", 36, 27, 7, 2, 82, 31)
-    records = Records()
-    records.add_record(record)
-    standing = Standing(rank=1, team=team, points=88, group="Serie A", form="WWWWD", records=records)
-    standings = Standings()
-    standings.add(standing)
     key = Key("test", "2021")
+    standings = MockStandingsSource().get_standings(key)
     redis_cache.put(key, to_binary(standings))
 
     from_cache = from_binary(redis_cache.get(key))

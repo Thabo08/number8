@@ -221,6 +221,10 @@ class Standings:
     def __str__(self):
         return self.as_json()
 
+    @staticmethod
+    def mongo_key():
+        return 'standings'
+
 
 def standing_builder(standing_response):
     """ Builds a standing from json text
