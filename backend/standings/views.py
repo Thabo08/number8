@@ -2,6 +2,7 @@ from backend.standings.common import config
 from backend.standings.common import logger_factory
 from backend.standings.domain.config import ConfigProvider
 from backend.standings.domain.leagues import Leagues
+from backend.standings.domain.response.standings import MockStandingsSource
 from backend.standings.domain.response.standings import Standings
 from werkzeug.utils import import_string, cached_property
 
@@ -35,6 +36,11 @@ else:
     storage = Storage(database_provider(Database.is_in_memory(storage_type),
                                         redis_cache=redis_cache, mongo_db=mongo_db))
 
+# This is to enable testing without making a call to RapidAPI
+MOCK_MODE = True
+if MOCK_MODE:
+    mock = MockStandingsSource()
+
 
 class LazyView(object):
 
@@ -67,20 +73,25 @@ def get_league_standings(league, season):
 
 
 def get_from_server(alias, key, league, season):
-    url = "https://{}/{}/{}".format(API_HOST, API_VERSION, BASE_PATH)
-    logger.info("Retrieving '%s' season standings for '%s' league from '%s'", season, alias, url)
-    querystring = {"season": season, "league": league}
-    headers = {
-        'x-rapidapi-key': API_KEY,
-        'x-rapidapi-host': API_HOST
-    }
-    response = requests.request("GET", url, headers=headers, params=querystring)
-    standings = Standings()
-    standings_response = response.json()['response'][0]['league']['standings'][0]
-    for standing_response in standings_response:
-        standing = standing_builder(standing_response)
-        standings.add(standing)
-        logger.debug("Added standing: %s", standing)
+
+    if MOCK_MODE:
+        logger.info("Retrieving '%s' season standings for '%s' league from mock source", season, alias)
+        standings = mock.get_standings(key)
+    else:
+        url = "https://{}/{}/{}".format(API_HOST, API_VERSION, BASE_PATH)
+        logger.info("Retrieving '%s' season standings for '%s' league from '%s'", season, alias, url)
+        querystring = {"season": season, "league": league}
+        headers = {
+            'x-rapidapi-key': API_KEY,
+            'x-rapidapi-host': API_HOST
+        }
+        response = requests.request("GET", url, headers=headers, params=querystring)
+        standings = Standings()
+        standings_response = response.json()['response'][0]['league']['standings'][0]
+        for standing_response in standings_response:
+            standing = standing_builder(standing_response)
+            standings.add(standing)
+            logger.debug("Added standing: %s", standing)
     storage.store(key, standings)
     return standings.as_json()
 

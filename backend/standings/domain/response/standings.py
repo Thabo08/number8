@@ -8,6 +8,7 @@
 # '2021-05-15T00:00:00+00:00'}
 
 import json
+import random
 
 from backend.standings.common import equality_tester
 from backend.standings.common import logger_factory
@@ -194,6 +195,8 @@ class Standings:
         rank = standing.get_rank()
         self.standings[rank] = standing
 
+        return self
+
     def get_all(self):
         return self.standings
 
@@ -259,3 +262,44 @@ def _goals_builder(goals_response):
     goals_against = goals_response['against']
 
     return Goals(goals_for=goals_for, goals_against=goals_against)
+
+
+class MockStandingsSource:
+    """ This gets Standings data from dummy data instead of making a call to RapidApi. It's a cost saving strategy
+    to improve testing """
+
+    def __init__(self):
+        random.seed()
+        self.standings = {}
+
+    def _build(self) -> Standings:
+        standings = Standings()
+        games = 38
+        for i in range(1, 21):
+            team = Team(i, f'Team_{i}', f'https://media.api-sports.io/football/teams/{i}.png', f'https://www.team{i}.it')
+            wins = games - i
+            draws = games - wins
+            loses = 0
+            points = (wins * 3) + draws
+
+            record = Record("all", games, wins, draws, loses, random.randint(80, 100), random.randint(10, 30))
+            records = Records()
+            records.add_record(record)
+            form = self._random_form()
+            standing = Standing(rank=i, team=team, points=points, group="EPL", form=form, records=records)
+            standings.add(standing)
+
+        return standings
+
+    def _random_form(self):
+        f = ['W', 'D', 'L']
+        form = ''
+        for i in range(5):
+            r = random.randint(0, 2)
+            form += f[r]
+        return form
+
+    def get_standings(self, key) -> Standings:
+        if key not in self.standings:
+            self.standings[key] = self._build()
+        return self.standings[key]
