@@ -1,0 +1,34 @@
+{
+	"info": {
+		"_postman_id": "8ac47274-b9e1-4e2f-b882-3018fee33c78",
+		"name": "standings",
+		"description": "Make it easier to test",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "get_standings",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:5000/standings/epl/2019",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5000",
+					"path": [
+						"standings",
+						"epl",
+						"2019"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
