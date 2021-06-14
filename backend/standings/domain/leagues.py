@@ -28,9 +28,22 @@ class Leagues:
     """This holds a dictionary/map of :func:`League` objects. Loaded from config file, a :func:`League` object can
         retrieved by passing the league alias to the :func:`League.get_league` method.
     """
+    __instance = None
+
+    @staticmethod
+    def get_instance(config_provider: ConfigProvider):
+        if Leagues.__instance is None:
+            Leagues(config_provider)
+        return Leagues.__instance
+
     def __init__(self, config_provider: ConfigProvider):
         self.logger = logger_factory(Leagues.__name__)
         self.leagues = _load_leagues_from_config(config_provider, self.logger)
+
+        if Leagues.__instance is not None:
+            raise Exception("Instance of this class cannot be created again! Singleton violation!")
+        else:
+            Leagues.__instance = self
 
     def get_league(self, alias):
         """ Get :func:`League` object associated with an alias

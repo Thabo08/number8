@@ -77,8 +77,9 @@ class RedisCache:
             key = key.__str__()
             standings = self.redis_client.get(key)
             if standings is not None:
-                self.logger.debug("Retrieved %s for key %s from Redis Cache", standings, key)
-                return from_binary(standings)
+                from_redis = from_binary(standings)
+                self.logger.debug("Retrieved %s for key %s from Redis Cache", from_redis, key)
+                return from_redis
             else:
                 self.logger.debug("Standings for key %s not in Redis Cache", key)
                 return standings
@@ -140,7 +141,7 @@ class MongoDB:
 class Database:
     def __init__(self):
         self.logger = logger_factory(Database.__name__)
-        self.logger.info("Using {} database", self)
+        self.logger.info("Using %s database", self.__str__())
 
     def store(self, key: Key, standings: Standings):
         """ Stores value for key to database

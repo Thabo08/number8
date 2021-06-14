@@ -1,4 +1,5 @@
 from backend.standings.common import config
+from backend.standings.common import configure_logger
 from backend.standings.common import logger_factory
 from backend.standings.domain.config import ConfigProvider
 from backend.standings.domain.leagues import Leagues
@@ -18,7 +19,7 @@ from backend.standings.domain.storage.storage import RedisCache
 from backend.standings.domain.storage.storage import Storage
 from backend.standings.domain.storage.storage import database_provider
 
-leagues = Leagues(ConfigProvider('config/standings_config.json'))
+configure_logger("../log_config.yaml")
 logger = logger_factory(__name__)
 
 CONFIG = config('../config.json')
@@ -59,6 +60,7 @@ class LazyView(object):
 def get_league_standings(league, season):
 
     alias = league
+    leagues = Leagues.get_instance(ConfigProvider('config/standings_config.json'))
     league = leagues.get_league(alias)  # TODO: Handle the LeagueNotFoundError thrown by this method
     league = escape(league.get_league_id())
     season = escape(season)

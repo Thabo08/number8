@@ -16,7 +16,9 @@ def config(config_file):
 
 
 def logger_factory(name):
-    return logging.getLogger(name)
+    logger = logging.getLogger(name)
+    logger.disabled = False  # In case the logger is disabled
+    return logger
 
 
 def configure_logger(config_file):
