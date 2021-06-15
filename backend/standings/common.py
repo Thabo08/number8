@@ -6,6 +6,18 @@ import logging
 import logging.config
 from os import path
 
+# Constants
+RAPID_API_HOST = "rapidapi_host"
+RAPID_API_VESRION = "rapidapi_version"
+RAPID_API_KEY = "rapidapi_key"
+REDIS_HOST = "redis_host"
+REDIS_PORT = "redis_port"
+MONGO_HOST = "mongo_host"
+MONGO_PORT = "mongo_port"
+MONGO_USERNAME = "mongo_username"
+MONGO_PASSWORD = "mongo_password"
+MONGO_ADMIN_DB = "mongo_admin_db"
+
 
 def config(config_file):
     if not path.exists(config_file):
@@ -37,4 +49,3 @@ def equality_tester(self_, clazz, other):
                 return False
         return True
     return False
-

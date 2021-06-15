@@ -1,3 +1,4 @@
+from backend.standings.common import *
 from backend.standings.common import config
 from backend.standings.common import configure_logger
 from backend.standings.common import logger_factory
@@ -6,7 +7,6 @@ from backend.standings.domain.leagues import Leagues
 from backend.standings.domain.response.standings import MockStandingsSource
 from backend.standings.domain.response.standings import Standings
 from werkzeug.utils import import_string, cached_property
-
 
 from markupsafe import escape
 import requests
@@ -23,23 +23,32 @@ configure_logger("../log_config.yaml")
 logger = logger_factory(__name__)
 
 CONFIG = config('../config.json')
-API_HOST = CONFIG['rapidapi_host']
-API_VERSION = CONFIG['rapidapi_version']
-API_KEY = CONFIG['rapidapi_key']
+rapid_api_config = CONFIG["rapidapi"]
+API_HOST = rapid_api_config[RAPID_API_HOST]
+API_VERSION = rapid_api_config[RAPID_API_VESRION]
+API_KEY = rapid_api_config[RAPID_API_KEY]
 BASE_PATH = "standings"
 
-storage_type = "real_database"
-if storage_type == "in_memory":
-    storage = Storage(database_provider(Database.is_in_memory(storage_type)))
-else:
-    redis_cache = RedisCache()
-    mongo_db = MongoDB()
-    storage = Storage(database_provider(Database.is_in_memory(storage_type),
-                                        redis_cache=redis_cache, mongo_db=mongo_db))
+storage_config = CONFIG["storage"]
+storage_type = "real_database" if storage_config["real_database"] else "in_memory"
+
+
+def get_storage():
+    if storage_type == "in_memory":
+        return Storage(database_provider(Database.is_in_memory(storage_type)))
+    else:
+        redis_cache = RedisCache(host=storage_config[REDIS_HOST], port=storage_config[REDIS_PORT])
+        mongo_db = MongoDB(host=storage_config[MONGO_HOST], port=storage_config[MONGO_PORT],
+                           username=storage_config[MONGO_USERNAME], password=storage_config[MONGO_PASSWORD])
+        return Storage(database_provider(Database.is_in_memory(storage_type),
+                                         redis_cache=redis_cache, mongo_db=mongo_db))
+
+
+storage = get_storage()
 
 # This is to enable testing without making a call to RapidAPI
-MOCK_MODE = True
-if MOCK_MODE:
+MOCK_MODE = CONFIG["mock_mode"]
+if CONFIG["mock_mode"]:
     mock = MockStandingsSource()
 
 
@@ -58,7 +67,6 @@ class LazyView(object):
 
 
 def get_league_standings(league, season):
-
     alias = league
     leagues = Leagues.get_instance(ConfigProvider('config/standings_config.json'))
     league = leagues.get_league(alias)  # TODO: Handle the LeagueNotFoundError thrown by this method
@@ -75,7 +83,6 @@ def get_league_standings(league, season):
 
 
 def get_from_server(alias, key, league, season):
-
     if MOCK_MODE:
         logger.info("Retrieving '%s' season standings for '%s' league from mock source", season, alias)
         standings = mock.get_standings(key)
@@ -96,4 +103,3 @@ def get_from_server(alias, key, league, season):
             logger.debug("Added standing: %s", standing)
     storage.store(key, standings)
     return standings.as_json()
-
