@@ -5,11 +5,16 @@ services:
     container_name: mongodb
     ports:
       - 27017:27017
+    expose:
+      - 27017
     volumes:
       - data:/data
     environment:
       - MONGO_INITDB_ROOT_USERNAME=admin
       - MONGO_INITDB_ROOT_PASSWORD=pass
+    networks:
+      - default
+      - back-end
   mongo-express:
     image: mongo-express
     container_name: mongo-express
@@ -20,13 +25,18 @@ services:
       - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
       - ME_CONFIG_MONGODB_ADMINPASSWORD=pass
       - ME_CONFIG_MONGODB_SERVER=mongodb
+    networks:
+      - default
   redis:
     image: redis
     container_name: redis
     ports:
       - 6379:6379
+    expose:
+      - 6379
+    networks:
+      - back-end
   standings:
-#    build: .
     image: standings
     container_name: standings
     ports:
@@ -34,8 +44,14 @@ services:
     depends_on:
       - redis
       - mongodb
+    links:
+      - redis
+      - mongodb
+    networks:
+      - back-end
 volumes:
   data: {}
 networks:
   default:
     name: mongodb_network
+  back-end: {}
