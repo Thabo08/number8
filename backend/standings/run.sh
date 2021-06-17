@@ -1,8 +1,8 @@
 #!/bin/sh
 source /home/backend/venv/bin/activate
-#export PYTHONPATH=$PYTHONPATH:/home/backend
+export PYTHONPATH="${PYTHONPATH}:/home/"
 export PYTHONPATH="${PYTHONPATH}:/home/backend/"
-export PYTHONPATH="${PYTHONPATH}:/home/backend/standings"
+export PYTHONPATH="${PYTHONPATH}:/home/backend/standings/"
 cd /home/backend/standings
-#python -m http.server 8000
-python -m main.py
+export FLASK_APP=main.py
+exec gunicorn -b :5000 --access-logfile - --error-logfile - main:app

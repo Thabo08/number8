@@ -25,6 +25,15 @@ services:
     container_name: redis
     ports:
       - 6379:6379
+  standings:
+#    build: .
+    image: standings
+    container_name: standings
+    ports:
+      - 5000:5000
+    depends_on:
+      - redis
+      - mongodb
 volumes:
   data: {}
 networks:

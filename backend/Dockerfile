@@ -8,9 +8,10 @@ COPY requirements.txt requirements.txt
 RUN python -m venv venv
 RUN pip install -r requirements.txt
 RUN venv/bin/pip install -r requirements.txt
+RUN venv/bin/pip install gunicorn
 
 RUN echo 'Copying files ...'
-COPY standings/* /home/backend/standings
+COPY standings/ ./standings/
 COPY config.json config.json
 COPY log_config.yaml log_config.yaml
 

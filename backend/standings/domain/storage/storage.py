@@ -181,7 +181,7 @@ class _InMemoryDatabase(Database):
         self.database = {}
 
     def store(self, key: Key, standings: Standings):
-        self.logger.info("Storing standings for %s in memory database", key)
+        self.logger.info("Storing standings %s for %s in memory database", standings, key)
         self.database[key] = standings
 
     def check_and_get(self, key: Key):
