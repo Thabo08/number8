@@ -14,7 +14,7 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=pass
     networks:
       - default
-      - back-end
+      - db_network
   mongo-express:
     image: mongo-express
     container_name: mongo-express
@@ -35,7 +35,7 @@ services:
     expose:
       - 6379
     networks:
-      - back-end
+      - db_network
   standings:
     image: standings
     container_name: standings
@@ -44,14 +44,11 @@ services:
     depends_on:
       - redis
       - mongodb
-    links:
-      - redis
-      - mongodb
     networks:
-      - back-end
+      - db_network
 volumes:
   data: {}
 networks:
   default:
     name: mongodb_network
-  back-end: {}
+  db_network: {}
