@@ -10,6 +10,7 @@ from werkzeug.utils import import_string, cached_property
 
 from markupsafe import escape
 import requests
+import sys
 
 from backend.standings.domain.response.standings import standing_builder
 from backend.standings.domain.storage.storage import Database
@@ -31,15 +32,18 @@ BASE_PATH = "standings"
 
 storage_config = CONFIG["storage"]
 storage_type = "real_database" if storage_config["real_database"] else "in_memory"
+not_container = sys.argv[1:][0] == 'not_container'
 
 
 def get_storage():
     if storage_type == "in_memory":
         return Storage(database_provider(Database.is_in_memory(storage_type)))
     else:
-        redis_cache = RedisCache(host=storage_config[REDIS_HOST], port=storage_config[REDIS_PORT])
-        mongo_db = MongoDB(host=storage_config[MONGO_HOST], port=storage_config[MONGO_PORT],
-                           username=storage_config[MONGO_USERNAME], password=storage_config[MONGO_PASSWORD])
+        redis_cache = RedisCache(host="localhost" if not_container else storage_config[REDIS_HOST],
+                                 port=storage_config[REDIS_PORT])
+        mongo_db = MongoDB(host="localhost" if not_container else storage_config[MONGO_HOST],
+                           port=storage_config[MONGO_PORT], username=storage_config[MONGO_USERNAME],
+                           password=storage_config[MONGO_PASSWORD])
         return Storage(database_provider(Database.is_in_memory(storage_type),
                                          redis_cache=redis_cache, mongo_db=mongo_db))
 

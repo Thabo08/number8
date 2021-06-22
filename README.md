@@ -4,6 +4,6 @@
 The application is **work in progress** and many things might not work at times. 
 
 The backend applications get the underlying data from [api-football](https://www.api-football.com "API Football"). The front-end
-application(s) (mobile and web (?)) pull the standings data from the backend applications.
+application(s) (mobile and web (?)) pull the 'standings' data from the backend applications.
 
 
