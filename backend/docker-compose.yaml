@@ -1,7 +1,7 @@
 version: "3.8"
 services:
   mongodb:
-    image: mongo
+    image: "mongo:4.4.6"
     container_name: mongodb
     ports:
       - "27017:27017"
@@ -16,7 +16,7 @@ services:
       - default
       - db_network
   mongo-express:
-    image: mongo-express
+    image: "mongo-express:0.54.0"
     container_name: mongo-express
     restart: always
     ports:
@@ -28,7 +28,7 @@ services:
     networks:
       - default
   redis:
-    image: redis
+    image: "redis:6.2.4-alpine"
     container_name: redis
     ports:
       - "6379:6379"
