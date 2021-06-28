@@ -40,7 +40,7 @@ def get_storage():
         return Storage(database_provider(Database.is_in_memory(storage_type)))
     else:
         redis_cache = RedisCache(host="localhost" if not_container else storage_config[REDIS_HOST],
-                                 port=storage_config[REDIS_PORT])
+                                 port=storage_config[REDIS_PORT], time_to_live_hours=storage_config[REDIS_TTL_HOURS])
         mongo_db = MongoDB(host="localhost" if not_container else storage_config[MONGO_HOST],
                            port=storage_config[MONGO_PORT], username=storage_config[MONGO_USERNAME],
                            password=storage_config[MONGO_PASSWORD])

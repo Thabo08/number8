@@ -6,6 +6,7 @@ from bson.codec_options import TypeDecoder
 from bson.codec_options import TypeRegistry
 from pymongo import MongoClient
 from redis import Redis
+from datetime import timedelta
 
 from backend.standings.common import equality_tester
 from backend.standings.common import logger_factory
@@ -53,9 +54,10 @@ class Key:
 class RedisCache:
     """ This class sets up a connection to a Redis server and puts and retrieves data from the cache """
 
-    def __init__(self, host="localhost", port=6379, db=0):
+    def __init__(self, host="localhost", port=6379, db=0, time_to_live_hours=24):
         self.redis_client = Redis(host=host, port=port, db=db)
         self._flush()
+        self.ttl = timedelta(hours=time_to_live_hours)
         self.logger = logger_factory(RedisCache.__name__)
 
         self.logger.info("Initialised Redis Cache on: %s:%s", host, port)
@@ -66,7 +68,7 @@ class RedisCache:
     def put(self, key: Key, standings: Standings):
         try:
             key = key.__str__()
-            self.redis_client.set(key, to_binary(standings))
+            self.redis_client.set(name=key, value=to_binary(standings), ex=self.ttl)
             self.logger.debug("Inserted %s for key %s", standings, key)
         except Exception as e:
             self.logger.error("Could not insert %s for key %s. Error message: %s", standings, key, e.__str__())
