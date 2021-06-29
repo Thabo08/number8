@@ -117,8 +117,7 @@ class StorageTestCases(TestCase):
 
     @mock.patch('backend.standings.domain.storage.storage.RedisCache')
     @mock.patch('backend.standings.domain.storage.storage.MongoDB')
-    @mock.patch('backend.standings.domain.response.standings.Standings')
-    def test_should_return_false_if_value_for_key_exists_nowhere(self, redis_cache, mongodb, mock_standings):
+    def test_should_return_false_if_value_for_key_exists_nowhere(self, redis_cache, mongodb):
         # given
         redis_cache.get.return_value = None
         mongodb.read.return_value = None

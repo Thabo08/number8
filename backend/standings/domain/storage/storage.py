@@ -66,30 +66,43 @@ class RedisCache:
         self.redis_client.flushdb()
 
     def put(self, key: Key, standings: Standings):
-        try:
-            key = key.__str__()
-            self.redis_client.set(name=key, value=to_binary(standings), ex=self.ttl)
-            self.logger.debug("Inserted %s for key %s", standings, key)
-        except Exception as e:
-            self.logger.error("Could not insert %s for key %s. Error message: %s", standings, key, e.__str__())
-            raise Exception("Could not insert {} for key {}. Error message: %s".format(standings, key, e.__str__()))
+        if self._is_available():
+            try:
+                key = key.__str__()
+                self.redis_client.set(name=key, value=to_binary(standings), ex=self.ttl)
+                self.logger.debug("Inserted %s for key %s", standings, key)
+            except Exception as e:
+                self.logger.error("Could not insert %s for key %s. Error message: %s", standings, key, e.__str__())
+                raise Exception("Could not insert {} for key {}. Error message: %s".format(standings, key, e.__str__()))
 
     def get(self, key: Key):
+        if self._is_available():
+            try:
+                key = key.__str__()
+                standings = self.redis_client.get(key)
+                if standings is not None:
+                    from_redis = from_binary(standings)
+                    self.logger.debug("Retrieved %s for key %s from Redis Cache", from_redis, key)
+                    return from_redis
+                else:
+                    self.logger.debug("Standings for key %s not in Redis Cache", key)
+                    return standings
+            except Exception as e:
+                self.logger.error("Could not retrieve standings for key %s from Redis Cache. Error message: %s",
+                                  key, e.__str__())
+                raise Exception("Could not retrieve standings for key {} from Redis Cache. Error message: {}"
+                                .format(key, e.__str__()))
+        else:
+            return None
+
+    def _is_available(self):
+        """ Checks whether the redis client is available. To avoid connection refused exceptions, this allows to
+        bypass redis if it's not available. """
         try:
-            key = key.__str__()
-            standings = self.redis_client.get(key)
-            if standings is not None:
-                from_redis = from_binary(standings)
-                self.logger.debug("Retrieved %s for key %s from Redis Cache", from_redis, key)
-                return from_redis
-            else:
-                self.logger.debug("Standings for key %s not in Redis Cache", key)
-                return standings
+            return self.redis_client.ping()
         except Exception as e:
-            self.logger.error("Could not retrieve standings for key %s from Redis Cache. Error message: %s",
-                              key, e.__str__())
-            raise Exception("Could not retrieve standings for key {} from Redis Cache. Error message: {}"
-                            .format(key, e.__str__()))
+            self.logger.warn("%s", e.__str__())
+            return False
 
 
 class MongoDB:
