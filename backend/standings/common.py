@@ -43,8 +43,3 @@ def equality_tester(self_, clazz, other):
                 return False
         return True
     return False
-
-
-if __name__ == '__main__':
-    c = app_config('/Users/thabo/Documents/code/personal/number8/backend/app_config.yaml')
-    print(c['storage']['redis.host'])
