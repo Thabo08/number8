@@ -6,19 +6,6 @@ import logging
 import logging.config
 from os import path
 
-# Constants
-RAPID_API_HOST = "rapidapi_host"
-RAPID_API_VESRION = "rapidapi_version"
-RAPID_API_KEY = "rapidapi_key"
-REDIS_HOST = "redis_host"
-REDIS_PORT = "redis_port"
-REDIS_TTL_HOURS = "redis_ttl_hours"
-MONGO_HOST = "mongo_host"
-MONGO_PORT = "mongo_port"
-MONGO_USERNAME = "mongo_username"
-MONGO_PASSWORD = "mongo_password"
-MONGO_ADMIN_DB = "mongo_admin_db"
-
 
 def config(config_file):
     if not path.exists(config_file):
@@ -26,6 +13,12 @@ def config(config_file):
     with open(config_file) as config_file:
         config = json.load(config_file)
     return config
+
+
+def app_config(config_file):
+    with open(config_file, 'r') as f:
+        app_config_ = yaml.safe_load(f.read())
+    return app_config_
 
 
 def logger_factory(name):
@@ -50,3 +43,8 @@ def equality_tester(self_, clazz, other):
                 return False
         return True
     return False
+
+
+if __name__ == '__main__':
+    c = app_config('/Users/thabo/Documents/code/personal/number8/backend/app_config.yaml')
+    print(c['storage']['redis.host'])

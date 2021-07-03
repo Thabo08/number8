@@ -129,4 +129,4 @@ dmypy.json
 .pyre/
 .gitsecret/keys/random_seed
 !*.secret
-backend/config.json
+backend/config.jsonbackend/app_config.yaml

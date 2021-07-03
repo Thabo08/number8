@@ -1,17 +1,14 @@
+import requests
+import sys
+from markupsafe import escape
+from werkzeug.utils import cached_property
+from werkzeug.utils import import_string
+
 from backend.standings.common import *
-from backend.standings.common import config
-from backend.standings.common import configure_logger
-from backend.standings.common import logger_factory
 from backend.standings.domain.config import ConfigProvider
 from backend.standings.domain.leagues import Leagues
 from backend.standings.domain.response.standings import MockStandingsSource
 from backend.standings.domain.response.standings import Standings
-from werkzeug.utils import import_string, cached_property
-
-from markupsafe import escape
-import requests
-import sys
-
 from backend.standings.domain.response.standings import standing_builder
 from backend.standings.domain.storage.storage import Database
 from backend.standings.domain.storage.storage import Key
@@ -23,15 +20,15 @@ from backend.standings.domain.storage.storage import database_provider
 configure_logger("../log_config.yaml")
 logger = logger_factory(__name__)
 
-CONFIG = config('../config.json')
-rapid_api_config = CONFIG["rapidapi"]
-API_HOST = rapid_api_config[RAPID_API_HOST]
-API_VERSION = rapid_api_config[RAPID_API_VESRION]
-API_KEY = rapid_api_config[RAPID_API_KEY]
+CONFIG = app_config('../app_config.yaml')
+rapid_api_config = CONFIG['rapidapi']
+API_HOST = rapid_api_config['host']
+API_VERSION = rapid_api_config['version']
+API_KEY = rapid_api_config['key']
 BASE_PATH = "standings"
 
 storage_config = CONFIG["storage"]
-storage_type = "real_database" if storage_config["real_database"] else "in_memory"
+storage_type = "real_database" if storage_config['real_database'] else "in_memory"
 not_container = sys.argv[1:][0] == 'not_container'
 
 
@@ -39,11 +36,13 @@ def get_storage():
     if storage_type == "in_memory":
         return Storage(database_provider(Database.is_in_memory(storage_type)))
     else:
-        redis_cache = RedisCache(host="localhost" if not_container else storage_config[REDIS_HOST],
-                                 port=storage_config[REDIS_PORT], time_to_live_hours=storage_config[REDIS_TTL_HOURS])
-        mongo_db = MongoDB(host="localhost" if not_container else storage_config[MONGO_HOST],
-                           port=storage_config[MONGO_PORT], username=storage_config[MONGO_USERNAME],
-                           password=storage_config[MONGO_PASSWORD])
+        redis_config = storage_config['redis']
+        redis_cache = RedisCache(host="localhost" if not_container else redis_config['host'],
+                                 port=redis_config['port'], time_to_live_hours=redis_config['timeToLive'])
+        mongo_config = storage_config['mongo']
+        mongo_db = MongoDB(host="localhost" if not_container else mongo_config['host'],
+                           port=mongo_config['port'], username=mongo_config['username'],
+                           password=mongo_config['password'])
         return Storage(database_provider(Database.is_in_memory(storage_type),
                                          redis_cache=redis_cache, mongo_db=mongo_db))
 
@@ -51,8 +50,8 @@ def get_storage():
 storage = get_storage()
 
 # This is to enable testing without making a call to RapidAPI
-MOCK_MODE = CONFIG["mock_mode"]
-if CONFIG["mock_mode"]:
+MOCK_MODE = CONFIG['mock_mode']
+if CONFIG['mock_mode']:
     mock = MockStandingsSource()
 
 
@@ -93,7 +92,7 @@ def get_from_server(alias, key, league, season):
     else:
         url = "https://{}/{}/{}".format(API_HOST, API_VERSION, BASE_PATH)
         logger.info("Retrieving '%s' season standings for '%s' league from '%s'", season, alias, url)
-        querystring = {"season": season, "league": league}
+        querystring = {'season': season, 'league': league}
         headers = {
             'x-rapidapi-key': API_KEY,
             'x-rapidapi-host': API_HOST

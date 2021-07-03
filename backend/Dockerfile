@@ -12,7 +12,7 @@ RUN venv/bin/pip install gunicorn
 
 RUN echo 'Copying files ...'
 COPY standings/ ./standings/
-COPY config.json config.json
+COPY app_config.yaml app_config.yaml
 COPY log_config.yaml log_config.yaml
 
 RUN chmod +x standings/run.sh
