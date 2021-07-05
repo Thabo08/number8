@@ -7,8 +7,12 @@ from backend.standings.common import logger_factory
 class ConfigProvider:
     """This class loads the config and makes it available to the callers"""
     def __init__(self, config_file: str):
-        self.config = config(config_file)
         self.logger = logger_factory(ConfigProvider.__name__)
+        try:
+            self.config = config(config_file)
+        except FileNotFoundError as e:
+            self.logger.error(e.__str__())
+            raise
 
     def get_config_per_type(self, config_type: str):
         """This method gets config per type from the loaded config

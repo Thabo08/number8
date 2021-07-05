@@ -56,7 +56,7 @@ class Leagues:
         league = self.leagues.get(alias)
         if league is None:
             self.logger.error("No league with alias: %s", alias)
-            raise LeagueNotFoundError("No league with alias: {}".format(alias))
+            raise LeagueException("No league with alias: {}".format(alias))
         return league
 
 
@@ -79,7 +79,7 @@ def _load_leagues_from_config(config_provider: ConfigProvider, logger, config_ty
     return loaded_leagues
 
 
-class LeagueNotFoundError(Exception):
+class LeagueException(Exception):
     def __init__(self, message):
-        super(LeagueNotFoundError, self).__init__(message)
+        super(LeagueException, self).__init__(message)
 

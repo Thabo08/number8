@@ -9,7 +9,7 @@ from os import path
 
 def config(config_file):
     if not path.exists(config_file):
-        raise FileNotFoundError("{} does not exist".format(config_file))
+        raise FileNotFoundError("'{}' file does not exist".format(config_file))
     with open(config_file) as config_file:
         config = json.load(config_file)
     return config

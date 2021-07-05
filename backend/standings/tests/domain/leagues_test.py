@@ -3,7 +3,7 @@ import os
 
 from backend.standings.domain.config import ConfigProvider
 from backend.standings.domain.leagues import League, Leagues
-from backend.standings.domain.leagues import LeagueNotFoundError
+from backend.standings.domain.leagues import LeagueException
 
 
 class LeagueTestCases(TestCase):
@@ -33,6 +33,6 @@ class LeaguesTestCases(TestCase):
         self.assertIsNotNone(self.leagues.get_league("epl"), "League with alias {} should exist".format("epl"))
 
     def test_should_raise_value_error_when_alias_league_does_not_exist(self):
-        self.assertRaises(LeagueNotFoundError, self.leagues.get_league, "rubbish")
+        self.assertRaises(LeagueException, self.leagues.get_league, "rubbish")
 
 

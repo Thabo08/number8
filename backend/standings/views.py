@@ -1,12 +1,17 @@
 import requests
 import sys
+import datetime
 from markupsafe import escape
 from werkzeug.utils import cached_property
 from werkzeug.utils import import_string
 
 from backend.standings.common import *
 from backend.standings.domain.config import ConfigProvider
+from backend.standings.domain.leagues import LeagueException
 from backend.standings.domain.leagues import Leagues
+from backend.standings.domain.response.http_exceptions import ERROR_CODES
+from backend.standings.domain.response.http_exceptions import client_error_response
+from backend.standings.domain.response.http_exceptions import server_error_response
 from backend.standings.domain.response.standings import MockStandingsSource
 from backend.standings.domain.response.standings import Standings
 from backend.standings.domain.response.standings import standing_builder
@@ -27,7 +32,7 @@ API_VERSION = rapid_api_config['version']
 API_KEY = rapid_api_config['key']
 BASE_PATH = "standings"
 
-storage_config = CONFIG["storage"]
+storage_config = CONFIG['storage']
 storage_type = "real_database" if storage_config['real_database'] else "in_memory"
 not_container = sys.argv[1:][0] == 'not_container'
 
@@ -71,8 +76,18 @@ class LazyView(object):
 
 def get_league_standings(league, season):
     alias = league
-    leagues = Leagues.get_instance(ConfigProvider('config/standings_config.json'))
-    league = leagues.get_league(alias)  # TODO: Handle the LeagueNotFoundError thrown by this method
+
+    try:
+        leagues = Leagues.get_instance(ConfigProvider(CONFIG['standings_config']))
+    except FileNotFoundError:
+        return server_error_response(ERROR_CODES.get("server_error"))
+
+    try:
+        _seasons_validator(season, alias)
+        league = leagues.get_league(alias)
+    except LeagueException as e:
+        return client_error_response(e.__str__(), ERROR_CODES.get("bad_request"))
+
     league = escape(league.get_league_id())
     season = escape(season)
 
@@ -106,3 +121,13 @@ def get_from_server(alias, key, league, season):
             logger.debug("Added standing: %s", standing)
     storage.store(key, standings)
     return standings.as_json()
+
+
+def _seasons_validator(season, alias):
+    # todo: This validation probably belongs somewhere else
+    season = int(season)
+    start = 2010  # todo: make this configurable?
+    end = datetime.datetime.now().year  # todo: Redirect if looking for standings of current year. This should look at
+                                        # todo: whether that season exists
+    if season <= start or season > end:
+        raise LeagueException("Invalid season '{}' for league alias '{}'".format(season, alias))
