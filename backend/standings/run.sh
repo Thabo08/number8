@@ -1,5 +1,5 @@
 #!/bin/sh
-source /home/backend/venv/bin/activate
+
 export PYTHONPATH="${PYTHONPATH}:/home/"
 export PYTHONPATH="${PYTHONPATH}:/home/backend/"
 export PYTHONPATH="${PYTHONPATH}:/home/backend/standings/"
