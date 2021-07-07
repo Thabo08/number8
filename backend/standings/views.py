@@ -107,12 +107,10 @@ def get_from_server(alias, key, league, season):
     else:
         url = "https://{}/{}/{}".format(API_HOST, API_VERSION, BASE_PATH)
         logger.info("Retrieving '%s' season standings for '%s' league from '%s'", season, alias, url)
-        querystring = {'season': season, 'league': league}
-        headers = {
-            'x-rapidapi-key': API_KEY,
-            'x-rapidapi-host': API_HOST
-        }
-        response = requests.request("GET", url, headers=headers, params=querystring)
+        response = _get_response(league, season, url)
+        if response.status_code != 200:
+            logger.error("Error reading from RapidApi. Status code: %s", response.status_code)
+            return server_error_response(ERROR_CODES.get("server_error"))
         standings = Standings()
         standings_response = response.json()['response'][0]['league']['standings'][0]
         for standing_response in standings_response:
@@ -123,11 +121,20 @@ def get_from_server(alias, key, league, season):
     return standings.as_json()
 
 
+def _get_response(league, season, url):
+    querystring = {'season': season, 'league': league}
+    headers = {
+        'x-rapidapi-key': API_KEY,
+        'x-rapidapi-host': API_HOST
+    }
+    return requests.request("GET", url, headers=headers, params=querystring)
+
+
 def _seasons_validator(season, alias):
     # todo: This validation probably belongs somewhere else
     season = int(season)
     start = 2010  # todo: make this configurable?
     end = datetime.datetime.now().year  # todo: Redirect if looking for standings of current year. This should look at
                                         # todo: whether that season exists
-    if season <= start or season > end:
+    if season < start or season > end:
         raise LeagueException("Invalid season '{}' for league alias '{}'".format(season, alias))

@@ -277,33 +277,95 @@ class MockStandingsSource:
         self.standings = {}
 
     def _build(self) -> Standings:
+        # This builds mock standings using random constructs. It's not very efficient, but we don't care much about that
+        # here
         standings = Standings()
         games = 38
+
+        points_list = []
+        streak_dict = {}
+
         for i in range(1, 21):
-            team = Team(i, f'Team_{i}', f'https://media.api-sports.io/football/teams/{i}.png', f'https://www.team{i}.it')
-            wins = games - i
-            draws = games - wins
-            loses = 0
+            wins, loses, draws, form = self._streak(games)
             points = (wins * 3) + draws
+            streak_dict[f'points_{points}'] = {
+                "wins": wins,
+                "loses": loses,
+                "draws": draws,
+                "form": form
+            }
+            points_list.append(points)
+
+        reversed_points = merge_sort(points_list)
+
+        for i in range(1, 21):
+            points = reversed_points[i - 1]
+            streak = streak_dict[f'points_{points}']
+            wins = streak['wins']
+            loses = streak['loses']
+            draws = streak['draws']
+            form = streak['form']
+            team = Team(i, f'Team_{i}', f'https://media.api-sports.io/football/teams/team_{i}.png', f'https://www.team{i}.it')
 
             record = Record("all", games, wins, draws, loses, random.randint(80, 100), random.randint(10, 30))
             records = Records()
             records.add_record(record)
-            form = self._random_form()
             standing = Standing(rank=i, team=team, points=points, group="EPL", form=form, records=records)
+
             standings.add(standing)
 
         return standings
 
-    def _random_form(self):
+    def _streak(self, games):
+        streak = []
+        wins, loses, draws = 0, 0, 0
         f = ['W', 'D', 'L']
-        form = ''
-        for i in range(5):
+
+        for i in range(games):
             r = random.randint(0, 2)
-            form += f[r]
-        return form
+            form = f[r]
+            if form == 'W':
+                wins += 1
+            if form == 'D':
+                draws += 1
+            if form == 'L':
+                loses += 1
+            streak.append(form)
+        form = ''
+        for i in streak[len(streak) - 5:]:
+            form += i
+        return wins, loses, draws, form
 
     def get_standings(self, key) -> Standings:
         if key not in self.standings:
             self.standings[key] = self._build()
         return self.standings[key]
+
+
+def merge(left_arr, right_arr):
+    result = []
+    left_index = 0
+    right_index = 0
+
+    while left_index < len(left_arr) and right_index < len(right_arr):
+        if left_arr[left_index] > right_arr[right_index]:
+            result.append(left_arr[left_index])
+            left_index += 1
+        else:
+            result.append(right_arr[right_index])
+            right_index += 1
+    result += left_arr[left_index:] + right_arr[right_index:]
+    return result
+
+
+def merge_sort(arr):
+    length = len(arr)
+    if length == 1:
+        return arr
+
+    # split array into left and right
+    middle = length // 2
+    left = arr[0: middle]
+    right = arr[middle:]
+
+    return merge(merge_sort(left), merge_sort(right))
