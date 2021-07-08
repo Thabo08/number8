@@ -40,4 +40,5 @@ jobs:
     # The deployment will be done here
     runs-on: ubuntu-latest
     steps:
+      - name: Deploy Artifacts
       - run: echo "deploy step"
