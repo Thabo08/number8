@@ -41,4 +41,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy Artifacts
-      - run: echo "deploy step"
+        run: echo "deploy step"
