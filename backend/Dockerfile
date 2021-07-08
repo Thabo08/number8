@@ -1,5 +1,8 @@
 FROM python:3.8-alpine
 
+RUN echo 'Running upgrades ...'
+RUN apk -U upgrade
+
 RUN adduser -D standings_user
 WORKDIR /home/backend
 

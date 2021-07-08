@@ -4,13 +4,12 @@ from bson.binary import Binary
 from bson.binary import USER_DEFINED_SUBTYPE
 from bson.codec_options import TypeDecoder
 from bson.codec_options import TypeRegistry
+from datetime import timedelta
 from pymongo import MongoClient
 from redis import Redis
-from datetime import timedelta
 
 from backend.standings.common import equality_tester
 from backend.standings.common import logger_factory
-from backend.standings.domain.response.standings import MockStandingsSource
 from backend.standings.domain.response.standings import Standings
 
 
@@ -271,22 +270,3 @@ class Storage:
 
     def check_and_get(self, key: Key):
         return self.database.check_and_get(key)
-
-
-if __name__ == '__main__':
-    # Some test code
-    redis_cache = RedisCache()
-    key = Key("test", "2021")
-    standings = MockStandingsSource().get_standings(key)
-    redis_cache.put(key, to_binary(standings))
-
-    from_cache = from_binary(redis_cache.get(key))
-    print(from_cache)
-
-    mongo_cache = MongoDB()
-
-    mongo_cache.write(key, standings)
-    from_mongo = mongo_cache.read(key)
-
-    print()
-    print(from_mongo.as_json())

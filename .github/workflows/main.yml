@@ -1,4 +1,3 @@
-# This is a basic workflow to help you get started with Actions
 
 name: CI
 
@@ -36,3 +35,9 @@ jobs:
 
       - name: Run tests with pytest
         run: python -m pytest -v
+
+  deploy:
+    # The deployment will be done here
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "deploy step"
