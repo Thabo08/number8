@@ -79,13 +79,15 @@ def get_league_standings(league, season):
 
     try:
         leagues = Leagues.get_instance(ConfigProvider(CONFIG['standings_config']))
-    except FileNotFoundError:
+    except FileNotFoundError as e:
+        logger.error(e.__str__())
         return server_error_response(ERROR_CODES.get("server_error"))
 
     try:
         _seasons_validator(season, alias)
         league = leagues.get_league(alias)
     except LeagueException as e:
+        logger.error(e.__str__())
         return client_error_response(e.__str__(), ERROR_CODES.get("bad_request"))
 
     league = escape(league.get_league_id())

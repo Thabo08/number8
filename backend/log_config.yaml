@@ -18,7 +18,7 @@ handlers:
     encoding: utf8
     when: 'midnight'
     utc: True
-    backupCount: 5
+    backupCount: 2
 
 root:
   level: DEBUG

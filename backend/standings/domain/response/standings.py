@@ -277,8 +277,9 @@ class MockStandingsSource:
         self.standings = {}
 
     def _build(self) -> Standings:
-        # This builds mock standings using random constructs. It's not very efficient, but we don't care much about that
-        # here
+        # This method builds mock standings using random constructs. It's not very efficient, but we don't care much
+        # about that here
+
         standings = Standings()
         games = 38
 
