@@ -73,6 +73,8 @@ class LazyView(object):
     def __call__(self, *args, **kwargs):
         return self.view(*args, **kwargs)
 
+def get_hello():
+    return {"hello": "world"}
 
 def get_league_standings(league, season):
     alias = league
@@ -81,14 +83,14 @@ def get_league_standings(league, season):
         leagues = Leagues.get_instance(ConfigProvider(CONFIG['standings_config']))
     except FileNotFoundError as e:
         logger.error(e.__str__())
-        return server_error_response(ERROR_CODES.get("server_error"))
+        return server_error_response(ERROR_CODES.get('server_error'))
 
     try:
         _seasons_validator(season, alias)
         league = leagues.get_league(alias)
     except LeagueException as e:
         logger.error(e.__str__())
-        return client_error_response(e.__str__(), ERROR_CODES.get("bad_request"))
+        return client_error_response(e.__str__(), ERROR_CODES.get('bad_request'))
 
     league = escape(league.get_league_id())
     season = escape(season)
