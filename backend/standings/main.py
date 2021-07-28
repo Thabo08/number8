@@ -14,9 +14,6 @@ logger.info("Started Standings service")
 
 app.add_url_rule('/standings/<league>/<season>', view_func=LazyView('views.get_league_standings'))
 
-app.add_url_rule('/', view_func=LazyView('views.get_hello'))
-
-
 if __name__ == '__main__':
     args = sys.argv[1:]
     if len(args) != 0:

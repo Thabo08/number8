@@ -73,8 +73,6 @@ class LazyView(object):
     def __call__(self, *args, **kwargs):
         return self.view(*args, **kwargs)
 
-def get_hello():
-    return {"hello": "world"}
 
 def get_league_standings(league, season):
     alias = league
