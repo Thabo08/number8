@@ -3,7 +3,7 @@
 export PYTHONPATH="${PYTHONPATH}:/app/"
 export PYTHONPATH="${PYTHONPATH}:/app/backend/"
 export PYTHONPATH="${PYTHONPATH}:/app/backend/standings/"
-python -m pytest -v
+
 working_dir="/app/backend/standings"
 if cd $working_dir;
 then
